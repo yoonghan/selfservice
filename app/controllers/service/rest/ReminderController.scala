@@ -220,8 +220,8 @@ object ReminderController extends BaseApiController with MongoController {
     val emailMessage = "Hello there,\n\n" +
     		"You are receiving this email as your email in JOM Jaring has not been verified\n"+
     		"\n\n"+
-    		s"Please verify your account by click on this link <a href='http://www.jomjaring.com/selfservice/verify?$link'>here</a>\n\n"+
-    		s"or manually trigger the link with http://www.jomjaring.com/reminder/verify?$link\n\n"+
+    		"Please verify your account by click on this link below:"+
+    		s"http://scala.jomjaring.com/reminder/verify?$link\n\n"+
     		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
     		"Sincerity from,\n"+
     		"JOM Jaring";
