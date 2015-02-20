@@ -1,0 +1,81 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Swagger - Root Resources Listing
+GET     /api-docs               			controllers.ApiHelpController.getResources
+
+# OPTIONS to support hosting UI off domain
+OPTIONS /*wholepath             			@controllers.service.BaseApiController.getOptions(wholepath)
+
+# API docs maintenance
+GET     /api-docs/image						controllers.ApiHelpController.getResource(path = "/image")
+GET     /api-docs/user						controllers.ApiHelpController.getResource(path = "/user")
+GET     /api-docs/reminder					controllers.ApiHelpController.getResource(path = "/reminder")
+GET     /api-docs/calendar					controllers.ApiHelpController.getResource(path = "/calendar")
+GET     /api-docs/subscription				controllers.ApiHelpController.getResource(path = "/subscription")
+GET     /api-docs/reportsetting				controllers.ApiHelpController.getResource(path = "/reportsetting")
+
+# Home page
+GET     /									controllers.Application.index
+GET     /help								controllers.Application.help
+GET		/ping								controllers.Application.ping
+
+#Login page
+GET		/service/oauth/send/$atype<G|D_G|F|D_F>	controllers.service.auth.AuthController.oauthSend(atype:String)
+GET		/service/oauth/receiv				controllers.service.auth.AuthController.oauthReceive(code:String ?="", state:String ?= "", error_message:String ?="", error_code:String ?="")
+
+#Logout page
+GET		/user/logout						controllers.service.rest.UserController.logout
+
+#Self service
+GET		/user/basicinfo						controllers.service.rest.UserController.userInfo
+GET     /user/accesses						controllers.service.rest.UserController.accesses
+GET     /user/profile						controllers.service.rest.UserController.profile
+PUT     /user/profile						controllers.service.rest.UserController.profileIns
+POST    /user/profile						controllers.service.rest.UserController.profileUpd
+GET		/user/testprofile					controllers.service.rest.UserController.testprofile
+
+#Reminder service
+GET     /reminder/profile					controllers.service.rest.ReminderController.profile
+POST    /reminder/profile					controllers.service.rest.ReminderController.profileIns
+GET		/reminder/resent					controllers.service.rest.ReminderController.resendEmailReminder
+GET		/reminder/verify					controllers.service.rest.ReminderController.validateEmailReminder(u:String,k:String)
+
+#Subscription
+GET		/subscription/hosts					controllers.service.rest.SubscriptionController.hostlist
+POST	/subscription/hosts					controllers.service.rest.SubscriptionController.updateHostList
+
+
+#Weather service
+GET		/tools/weatherinfo					controllers.service.cal.WeatherController.index
+GET		/tools/weatherlocations				controllers.service.cal.WeatherController.weatherlocations
+
+#Calendar
+GET		/tools/calendar						controllers.service.cal.CalendarController.schedules
+PUT		/tools/calendar						controllers.service.cal.CalendarController.create
+GET		/tools/calendarconf/:from/:to		controllers.service.cal.CalendarController.calendarconf(from:Long, to:Long)
+POST	/tools/calendarconf					controllers.service.cal.CalendarController.copySetup
+DELETE	/tools/calendarconf					controllers.service.cal.CalendarController.deleteSetup
+GET		/tools/calendarload					controllers.service.cal.CalendarController.reservationProgress
+
+GET		/tools/reservationlist				controllers.service.cal.CalendarController.reservationList
+GET		/tools/usersinreservation/:id		controllers.service.cal.CalendarController.usersInReservations(id:String)
+DELETE	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_unreserve
+
+#Reservation
+GET		/tools/reserve						controllers.service.cal.CalendarController.reservedList
+POST	/tools/reserve						controllers.service.cal.CalendarController.reserve
+DELETE	/tools/reserve						controllers.service.cal.CalendarController.unreserve
+
+# Generate report
+POST	/report/gen							controllers.service.rest.ReportSettingController.genCorporateReport
+GET		/report/isAllow						controllers.service.rest.ReportSettingController.isAllow
+GET		/report/setting						controllers.service.rest.ReportSettingController.setting
+POST	/report/setting						controllers.service.rest.ReportSettingController.settingIns
+
+# Rest interface
+GET		/rest/image/intro					controllers.service.rest.ImageController.findAllIntroImage
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file						controllers.Assets.at(path="/public", file)
