@@ -6,7 +6,6 @@ object ConfigurationSetup {
 
 	private val bookinghr = current.configuration.getString("min-server-booking-hr").get
 	
-	
 	val DATE_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy")
 	val DATETIME_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy hh:mm:ss")
 	val TEMP_FOLDER = current.configuration.getString("tempfile_folder.uri").get 
@@ -22,4 +21,8 @@ object ConfigurationSetup {
 	val EXCEL_TYPE = ".xlsx"
     
 	val LOGOUT_LOCATION = current.configuration.getString("logout").get;
+	
+	//Email Controls
+	val EMAIL_VALID_PATH = current.configuration.getString("email.validated").get;
+	val EMAIL_INVALID_PATH = current.configuration.getString("email.invalidated").get;
 }

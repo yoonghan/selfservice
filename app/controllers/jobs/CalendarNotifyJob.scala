@@ -25,6 +25,7 @@ import models.beans.EnumTableList._
 import models.beans.CalendarModel.CalendarRegisteredUser
 import models.beans.ReminderModel.ReminderSetting
 import models.beans.EmailNotifyModel.{EmailNotify,Notify}
+import controllers.service.CommonKeys.EMAIL_REMINDER_TYPE 
 
  
 object CalendarNotifyJob {
@@ -91,7 +92,7 @@ class CalendarNotifyActor extends UntypedActor {
     val query = Json.obj(
         "start" -> Json.obj("$gte" -> searchStartDate.getMillis()), 
         "start" -> Json.obj("$lte" -> searchEndDate.getMillis()), 
-        "registered"-> Json.obj("$exists" -> true, "$not" -> Json.obj("$size" -> 0))
+        "reg"-> Json.obj("$exists" -> true, "$not" -> Json.obj("$size" -> 0))
         )
 	val searchQuery:Cursor[CalendarRegisteredUser] = calCollection.find(query).cursor[CalendarRegisteredUser]
 	val curFutureSubList: Future[List[CalendarRegisteredUser]] = searchQuery.collect[List]()
@@ -106,7 +107,7 @@ class CalendarNotifyActor extends UntypedActor {
   def searchUserRegistered(dateSearch:String, calList:List[CalendarRegisteredUser], period:Int){
     
     for(cal <- calList){
-      for(userRegistered <- cal.registered.get){
+      for(userRegistered <- cal.reg.get){
         val query = Json.obj(
             "_id" -> userRegistered,
             "alertEmail" -> Json.obj("$exists" -> true, "$ne" -> ""),
@@ -150,7 +151,7 @@ class CalendarNotifyActor extends UntypedActor {
     		"JOM Jaring";
     
     val _id = cal.id+dateSearch
-    val notifyObj = EmailNotify(_id, cal.id, dateSearch, emailDistribution, emailMessage, false)
+    val notifyObj = EmailNotify(_id, cal.id, dateSearch, EMAIL_REMINDER_TYPE  ,emailDistribution, emailMessage, false)
     val insRec = emailCollection.insert(notifyObj)
     insRec.map{
         result =>

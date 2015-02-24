@@ -52,7 +52,7 @@ object ReportCreator {
 
 class BGReportCreator extends Actor{
   
-  val eventHeader = Array("First Name", "Middle Name", "Last Name", "Email", "Contact No", "Address", "PostCode", "State")
+  val eventHeader = Array("Status", "First Name", "Last Name", "Email", "Contact No", "Address", "PostCode", "State")
   val eventListHeader = Array("Title", "Description", "Start Date Time", "End Date Time", "Availability Left", "Reserve Count")
   val eventGap = 6 //This is for the event to ensure that a gap is left
   
@@ -89,19 +89,27 @@ class BGReportCreator extends Actor{
 	  /**
 	   * Process User details per Event.
 	   */
-	  def processUserPerEvent(userModel:List[UserStorageModel], calRegUser:CalendarRegisteredUser, startGap:Int, eventSheet:XSSFSheet, workbook:XSSFWorkbook):Future[List[UserProfile]] = {
+	  def processUserPerEvent(regModel:List[UserStorageModel], pendModel:List[UserStorageModel],
+	      calRegUser:CalendarRegisteredUser, startGap:Int, eventSheet:XSSFSheet, workbook:XSSFWorkbook):Future[List[UserProfileWithId]] = {
+	    
+	    val regMap = regModel.map(t => t.id -> t).toMap
+	    val pendMap = pendModel.map(t => t.id -> t).toMap
+	    
 	    val query = Json.obj(
-	        "_id" -> Json.obj("$in" -> userModel.map(_.id))
+	        "_id" -> Json.obj("$in" -> (regModel.map(_.id) ++ pendModel.map(_.id)))
 	        )
-	    val cursor:Cursor[UserProfile] = profileCollection.find(query).cursor[UserProfile]
-	    val futureUserList: Future[List[UserProfile]] = cursor.collect[List]()
+	    val cursor:Cursor[UserProfileWithId] = profileCollection.find(query).cursor[UserProfileWithId]
+	    val futureUserList: Future[List[UserProfileWithId]] = cursor.collect[List]()
 	    
 	    val rowCreator = createRow(eventSheet) _
 	    
 	    futureUserList.map { userList =>
 	      for(userCnt <- 0 until userList.size){
 	        val row = rowCreator((startGap) + (userCnt))
-	        writeUser(userList(userCnt), userModel(userCnt), row)
+	        val id = userList(userCnt)._id 
+	        val userModel = regMap.get(id).getOrElse(pendMap.get(id).get)
+	        
+	        writeUser(regMap.contains(id), userList(userCnt).firstName , userList(userCnt).lastName ,userModel, row)
 	      }
 	    }
 	    
@@ -193,16 +201,16 @@ class BGReportCreator extends Actor{
 	  /**
 	   * Write user detail
 	   */
-	  def writeUser(user:UserProfile, userModel:UserStorageModel, row:XSSFRow){
-	    writeCell(user.firstName , 0, row)
-	    writeCell(user.midName.getOrElse("") , 1, row)
-	    writeCell(user.lastName  , 2, row)
+	  def writeUser(confirmed:Boolean, firstName:String, lastName:String, userModel:UserStorageModel, row:XSSFRow){
+	    writeCell({if(confirmed) "Confirmed" else "Pending"} , 0, row)
+	    writeCell(firstName , 1, row)
+	    writeCell(lastName  , 2, row)
 	    
 	    writeCell(userModel.email.getOrElse("")   , 3, row)
-	    writeCell(userModel.contactNo.getOrElse("")   , 4, row)
+	    writeCell(userModel.ctcNo.getOrElse("")   , 4, row)
 	    
-	    writeCell(userModel.address.getOrElse("")  , 5, row)
-	    writeCell(userModel.postCode.getOrElse("")  , 6, row)
+	    writeCell(userModel.addr.getOrElse("")  , 5, row)
+	    writeCell(userModel.pstCd.getOrElse("")  , 6, row)
 	    writeCell(userModel.state.getOrElse("")   , 7, row)
 	    	 
 	  }
@@ -248,7 +256,7 @@ class BGReportCreator extends Actor{
 		//thirdCol
 	    val row3 = rowCreator(currRow+2)
 	      writeCell("Remaining Seats:", 0, row3)
-		  writeCell(event.availability , 1, row3)
+		  writeCell(event.avail , 1, row3)
 	    
 	    val row4 = rowCreator(currRow+3)
 	    val row5 = rowCreator(currRow+4)
@@ -277,9 +285,9 @@ class BGReportCreator extends Actor{
 			 writeCell(DATETIME_FORMAT.format(event.start) , 2, rowCreator)
 			 writeCell(DATETIME_FORMAT.format(event.end) , 3, rowCreator)
 		  }
-		  writeCell(event.availability, 4, rowCreator)
-		  if(event.registered.isDefined)
-			writeCell(event.registered.get.size, 5, rowCreator)
+		  writeCell(event.avail, 4, rowCreator)
+		  if(event.reg.isDefined)
+			writeCell(event.reg.get.size, 5, rowCreator)
 		  else
 		    writeCell(0, 5, rowCreator)
 	  }
@@ -294,17 +302,18 @@ class BGReportCreator extends Actor{
 	    
 	    val concurrList = for(eventCnt <- 0 until eventList.size) yield{
 	      val event = eventList(eventCnt)
+	      
 	      createEventListHeader(0, mainSheet)
 	      writeListEvent(1, eventCnt, event, mainSheet)
-	      val listUserId = if(event.registered.isDefined && event.registered.get.size > 0){
-	        val eventSheet = createSheet(workbook, event.title + "_" + DATE_FORMAT.format(event.start ))
-	        writeEvent(0, eventCnt, event, eventSheet)
-		    createEventHeader(eventGap, eventSheet)
-		    (processUserPerEvent(event.registered.get, event, eventGap+1, eventSheet, workbook))
-	      }else{
-	        Future(Nil)
-	      }
-	      listUserId
+	      val listRegUserId = if(event.reg.isDefined && event.reg.get.size > 0 || event.pend.isDefined && event.pend.get.size > 0){
+		        val eventSheet = createSheet(workbook, event.title + "_" + DATE_FORMAT.format(event.start ))
+		        writeEvent(0, eventCnt, event, eventSheet)
+			    createEventHeader(eventGap, eventSheet)
+			    (processUserPerEvent(event.reg.getOrElse(Nil), event.pend.getOrElse(Nil), event, eventGap+1, eventSheet, workbook))
+		      }else{
+		        Future(Nil)
+		      }
+	      listRegUserId
 		}
 	    
 	    if(eventList.length > 0){

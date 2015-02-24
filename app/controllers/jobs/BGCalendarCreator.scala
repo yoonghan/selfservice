@@ -107,7 +107,7 @@ class BGCalendarCreator extends Actor{
 	  listOfDates.filterNot( emptyBlackoutDates.contains( _ ))
 	}
 	
-	private def generateData(listOfDates:List[Long], fullDay:Boolean, timedEvents:List[TimedEvents], title:String, desc:String, userInfo:Int, userId:String ) = {
+	private def generateData(listOfDates:List[Long], fullDay:Boolean, timedEvents:List[TimedEvents], title:String, desc:String, userInfo:Int, confReq:Boolean, userId:String ) = {
 	  
 		val events = if(timedEvents.length == 0){
 		  List(new TimedEvents("0001","0100",1))
@@ -127,7 +127,7 @@ class BGCalendarCreator extends Actor{
 		/**
 		 * Corrected all Dates with time
 		 */
-		case class tmp_TempCalendar(start:Long, end: Long, availability:Int)
+		case class tmp_TempCalendar(start:Long, end: Long, avail:Int)
 		
 		val allList = for( 
 	      counter <- listOfDates.length-1 to 0 by -1;
@@ -158,7 +158,7 @@ class BGCalendarCreator extends Actor{
 		val total=allList.length
 		val counterList = for(counter <- 1 to total) yield {
 		  val getList = allList(counter - 1) 
-		  val cal = new TempCalendar(title, getList.start , getList.end , fullDay, desc, userInfo, getList.availability , userId, false, total, counter)
+		  val cal = new TempCalendar(title, getList.start , getList.end , fullDay, desc, userInfo, getList.avail, confReq, userId, false, total, counter)
 		  cal
 		}
 	  
@@ -167,7 +167,7 @@ class BGCalendarCreator extends Actor{
 	
 	private def insertToDatabase(data:IndexedSeq[TempCalendar], userId:String){
 	    val db = ReactiveMongoPlugin.db
-	    val calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
+	    val tmpCalCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
   
 	    val SIZE = 20
 	    
@@ -176,7 +176,7 @@ class BGCalendarCreator extends Actor{
 	    	  return;
 	      
 	    	for(eachRec <- finishing.take(SIZE)){
-	    		val insRec = calCollection.insert(eachRec)
+	    		val insRec = tmpCalCollection.insert(eachRec)
 	    		
 		    	insRec.onComplete{
 		    	  case Success(x) => ;
@@ -209,7 +209,7 @@ class BGCalendarCreator extends Actor{
 	    
 	    val filteredOffDates = blackOutListOfOccurrences(listOfDates, rs.blackoutEvents )
 	    
-	    val finishing = generateData(filteredOffDates, rs.fullDay , rs.timedEvents, rs.title, rs.desc, rs.userInfo, userId )
+	    val finishing = generateData(filteredOffDates, rs.fullDay , rs.timedEvents, rs.title, rs.desc, rs.userInfo, rs.conf.getOrElse(false), userId )
 	    
 	    insertToDatabase(finishing, userId);
 	    	
@@ -227,7 +227,7 @@ class BGCalendarCreator extends Actor{
 	    
 	    for(each <- rs){
 	      if(each.virtualDel == false){
-	      val cal = new CalendarWithoutId(each.title , each.start , each.end , each.allDay , each.desc , each.userInfo, each.availability , each.userId, cpId )
+	      val cal = new CalendarWithoutId(each.title , each.start , each.end , each.allDay , each.desc , each.userInfo, each.avail, each.conf, each.userId, cpId )
 	      val insRec = calCollection.insert(cal)
 	    	insRec.onComplete{
 	    	  case Success(x) => ;

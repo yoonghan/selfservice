@@ -16,6 +16,7 @@ object EmailNotifyModel{
      _id:String,
      userId:String,
      date:String,
+     emailType:Int,
      emailDist:String,
      message:String,
      completed:Boolean

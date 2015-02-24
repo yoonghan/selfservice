@@ -28,9 +28,10 @@ import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import controllers.service.ConfigurationSetup
 import models.beans.SubscriptionModel
-import models.beans.UserModel.{UserProfileWithId,UserMasked,maskId,unmaskId}
+import models.beans.UserModel.{UserProfileWithId,UserMasked,UserStorageModel,maskId,unmaskId}
 import models.beans.EnumTableList
 import controllers.jobs.ReportCreator
+import models.beans.UserModel
 
 /**
  * May move it as websocket in future. But concurrency now will be an issue.
@@ -78,8 +79,9 @@ object CalendarController extends BaseApiController with MongoController{
 	        	val cpIds = for(subCp <- subList) yield subCp.id 
 	          
 			    val query = Json.obj(
-				    "registered" -> Json.obj("$ne" -> userName), 
-				    "availability" -> Json.obj("$gt" -> 0),
+				    "reg.id" -> Json.obj("$ne" -> userName), 
+				    "pend.id" -> Json.obj("$ne" -> userName),
+				    "avail" -> Json.obj("$gt" -> 0),
 				    "start" -> Json.obj("$gt" -> currDate.getMillis()),
 				    "cpId" -> Json.obj("$in" -> cpIds)
 				    )
@@ -102,7 +104,7 @@ object CalendarController extends BaseApiController with MongoController{
     nickname = "getReservationInformation", 
     value = "reservation", 
     notes = "Returns the schedules user had already reserved", 
-    response = classOf[Calendar],
+    response = classOf[CalendarReserved],
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
@@ -110,8 +112,31 @@ object CalendarController extends BaseApiController with MongoController{
 	    val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 	
-		val cursor:Cursor[Calendar] = calCollection.find(Json.obj("registered.id" -> userIDCombination(oType,userId))).cursor[Calendar]
-		val futureCalList: Future[List[Calendar]] = cursor.collect[List]()
+		val cursor:Cursor[CalendarReserved] = calCollection.find(Json.obj("reg.id" -> userIDCombination(oType,userId))).cursor[CalendarReserved]
+		val futureCalList: Future[List[CalendarReserved]] = cursor.collect[List]()
+		
+	    futureCalList.map { calList =>
+	    	JsonResponse(Ok(Json.toJson(calList)))
+	    }
+  }
+  
+  /**
+   * Get reserved information
+   */
+  @ApiOperation(
+    nickname = "getPendingReservedEntry", 
+    value = "pendingReservation", 
+    notes = "Returns the schedules user wish to be reserved but pending approval", 
+    response = classOf[CalendarReserved],
+    httpMethod = "GET"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+	def pendingReserveList = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
+	    val userId = request.session(USER_ID)
+		val oType = request.session(OTYPE)
+	
+		val cursor:Cursor[CalendarReserved] = calCollection.find(Json.obj("pend.id" -> userIDCombination(oType,userId))).cursor[CalendarReserved]
+		val futureCalList: Future[List[CalendarReserved]] = cursor.collect[List]()
 		
 	    futureCalList.map { calList =>
 	    	JsonResponse(Ok(Json.toJson(calList)))
@@ -146,24 +171,33 @@ object CalendarController extends BaseApiController with MongoController{
 
           if(errorList.isEmpty){
             val query = Json.obj(
-                "_id"->Json.obj("$oid" -> reservation.id),				//The id 
-                "availability" -> Json.obj("$gt" -> 0),					//Have availability
-                "$or" -> Json.arr(Json.obj("userInfo" -> Json.obj("$exists" -> false)) , Json.obj("userInfo" -> reservation.userInfo)),
-                "start" -> Json.obj("$gt" -> currDate.getMillis())		//Must be after today - server time!
+                "_id"->Json.obj("$oid" -> reservation.id),			//The id 
+                "avail" -> Json.obj("$gt" -> 0),					//Have availability
+                "userInfo" -> reservation.userInfo,					//User Info request type
+                "conf" -> reservation.conf,							//Confirm or not
+                "start" -> Json.obj("$gt" -> currDate.getMillis())	//Must be after today - server time!
                 )
                 
                 
-            val storageObj = models.beans.UserModel.UserStorageModel(
+            val storageObj = UserStorageModel(
                 userIDCombination(oType,userId) ,
-                reservation.address ,
-                reservation.postCode ,
+                reservation.addr ,
+                reservation.pstCd ,
                 reservation.state ,
                 reservation.email ,
-                reservation.contactNo 
+                reservation.ctcNo 
                 )
-            val con_jsonObj = Json.obj( "$inc" -> Json.obj( "availability" -> -1), 
-                "$addToSet" -> Json.obj("registered" -> storageObj))
-            val updateRec = calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false)
+            
+            val updateRec = 
+              if(reservation.conf){
+                val con_jsonObj = Json.obj( "$inc" -> Json.obj( "avail" -> -1), 
+                "$addToSet" -> Json.obj("pend" -> storageObj))
+            	calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false)
+              }else{
+                val con_jsonObj = Json.obj( "$inc" -> Json.obj( "avail" -> -1), 
+                "$addToSet" -> Json.obj("reg" -> storageObj))
+                 calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false)
+              }
             updateRec.map{
                 result => 
                 if(result.updated == 1)
@@ -380,7 +414,10 @@ object CalendarController extends BaseApiController with MongoController{
 	
     val query = Json.obj(
         "cpId" -> cpId, 
-        "registered"-> Json.obj("$exists" -> true, "$not" -> Json.obj("$size" -> 0))
+        "$or" -> Json.arr(
+            Json.obj("reg"-> Json.obj("$exists" -> true, "$not" -> Json.obj("$size" -> 0))),
+            Json.obj("pend"-> Json.obj("$exists" -> true, "$not" -> Json.obj("$size" -> 0)))
+            )
         )
     val cursor:Cursor[Calendar] = calCollection.find(query).cursor[Calendar]
     val futureCalList: Future[List[Calendar]] = cursor.collect[List]()
@@ -426,25 +463,52 @@ object CalendarController extends BaseApiController with MongoController{
 		      futureCal.flatMap { cal => 
 				cal.size match {
 				  case 1 => {
-				    
-				    val registeredUsers = cal(0).registered.get.map( storageInfo => storageInfo.id)
+				    //Need to have both reg and pend, this is wrong!
+				    val registeredUsers:List[UserStorageModel] = {
+				      if(cal(0).reg.isDefined)
+				        cal(0).reg.get
+				      else
+				        Nil
+				    }
+				    val pendingUsers:List[UserStorageModel] = {
+				      if(cal(0).pend.isDefined)
+				        cal(0).pend.get
+				      else
+				         Nil
+				    }
 				    val queryIns = Json.obj(
-				        "_id" -> Json.obj("$in" -> registeredUsers)
-				        )
+				        "_id" -> Json.obj("$in" -> 
+				        (registeredUsers.map( storageInfo => storageInfo.id) ++ pendingUsers.map( storageInfo => storageInfo.id))
+				        ))
 				        
 				    val cursor:Cursor[UserProfileWithId] = profileCollection.find(queryIns).cursor[UserProfileWithId]
 				    val futureCalList: Future[List[UserProfileWithId]] = cursor.collect[List]()
 				    
+				    //Store all into maps
+				    val pendingMap = pendingUsers.map(t => t.id -> t).toMap
+				    val registeredMap = registeredUsers.map(t => t.id -> t).toMap
+				    
 				    futureCalList.map { calList =>
 				      val masked = calList.map( cal =>{
-				        UserMasked(cal.firstName, cal.lastName, maskId(cal._id))
+				        
+				        val user = registeredMap.get(cal._id).getOrElse(pendingMap.get(cal._id).get) //will always exist in either
+
+				        UserMasked(
+				            pendingMap.contains(cal._id),
+				            cal.firstName,
+				            cal.lastName,
+				            user.addr,
+				            user.pstCd,
+				            user.state,
+				            user.email ,
+				            user.ctcNo,
+				            maskId(cal._id))
 				      }
 				      )
 				      JsonResponse(Ok(Json.toJson(masked)))
 				    }
 				  }
 				  case _ => {
-				    
 				    Future.successful(JsonResponse(BadRequest(Json.obj("error"->"No such record"))))
 				  }
 				}
@@ -468,7 +532,7 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def cmd_unreserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>    
-	val calReservation = request.body.validate[CalUnReserve];
+	val calReservation = request.body.validate[CalCmdReserve];
 	val cpId = request.session(CP_ID)
     	
     calReservation.fold(
@@ -483,6 +547,64 @@ object CalendarController extends BaseApiController with MongoController{
 	   )
   }
   
+   /**
+   * Confirm pending user by CP
+   */
+  @ApiOperation(
+    nickname = "ConfirmUser", 
+    value = "Confirm by CP", 
+    notes = " Confirm pending user booking", 
+    response = classOf[Calendar],
+    httpMethod = "POST"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  def cmd_reserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>
+    val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
+	val calReservation = request.body.validate[CalCmdReserve];
+	val cpId = request.session(CP_ID)
+    	
+    calReservation.fold(
+        errors => {
+          Logger.info(errors.toString)
+        	Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+        },
+        reservation => {
+			val userId = unmaskId(reservation.userId )
+			val query = Json.obj("conf" -> true,
+						"_id" -> Json.obj("$oid" -> reservation.id),
+						"start" -> Json.obj("$gt" -> currDate.getMillis()),
+						"pend.id" -> userId)
+
+			val cursor:Cursor[CalendarRegisteredUser] = calCollection.find(query).cursor[CalendarRegisteredUser]
+			val futureCalList: Future[List[CalendarRegisteredUser]] = cursor.collect[List]()
+			futureCalList.flatMap{
+			  q_result =>{
+
+			    if(q_result.size==1){
+			    	val result = q_result(0).pend.get.find(pendingUser => pendingUser.id == userId)
+			    	val con_jsonObj = Json.obj( "$addToSet" -> Json.obj("reg" -> result.get),
+				      "$pull" -> Json.obj("pend" -> Json.obj("id" -> userId))
+				      )
+				    val updateRec = calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false) 
+			        val w_response = updateRec.map{
+			    	  w_result => {
+			    	    if(w_result.updated == 1){
+			    	    	JsonResponse(Created(Json.obj("success"->"OK")))
+			    	    }else{
+			    	      Logger.info(Json.stringify(query))
+			    	    	JsonResponse(BadRequest(Json.obj("error"->"We do not process past dates or there is no event found.")))
+			    	    }
+			    	  }
+			    	}
+			    	w_response
+			    }else{
+			      Future.successful(JsonResponse(BadRequest(Json.obj("error"->"We do not process past dates or there is no event found."))))
+			    }
+			  }
+			}
+       })
+  }
+  
   
   private def removeUser(reservationId:String, userId:String, cpId:Option[String]):Future[play.api.mvc.Result]={
     
@@ -493,18 +615,21 @@ object CalendarController extends BaseApiController with MongoController{
 	      Json.obj(
 		      "_id" -> Json.obj("$oid" -> reservationId),
 		      "start" -> Json.obj("$gt" -> currDate.getMillis()),
-		      "registered.id" -> userId
+		      "$or" -> Json.arr(Json.obj("reg.id" -> userId), Json.obj("pend.id" -> userId))
 		      )
       }else{
         Json.obj(
 	      "_id" -> Json.obj("$oid" -> reservationId),
 	      "start" -> Json.obj("$gt" -> currDate.getMillis()),
-	      "registered.id" -> userId,
+	      "$or" -> Json.arr(Json.obj("reg.id" -> userId), Json.obj("pend.id" -> userId)),
 	      "cpId" -> cpId.get
 	      )
       }
-	val con_jsonObj = Json.obj( "$inc" -> Json.obj( "availability" -> 1), 
-	      "$pull" -> Json.obj("registered" -> Json.obj("id" -> userId)))
+    
+	val con_jsonObj = Json.obj( "$inc" -> Json.obj( "avail" -> 1),
+	      "$pull" -> Json.obj("reg" -> Json.obj("id" -> userId)),
+	      "$pull" -> Json.obj("pend" -> Json.obj("id" -> userId))
+	      )
 	val updateRec = calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false)
 	val response = updateRec.map{
 	result => {

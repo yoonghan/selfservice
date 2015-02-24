@@ -18,6 +18,7 @@ import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import com.wordnik.swagger.annotations.ApiResponses
 import com.wordnik.swagger.annotations.ApiResponse
+import scala.util.{Failure,Success}
 import scala.concurrent.duration._
 import play.api.data.Forms._
 import models.beans.EnumTableList.{REMINDER,EMAIL_VALID_LIST,EMAIL_NOTIFY_LIST }
@@ -26,6 +27,8 @@ import java.util.UUID
 import reactivemongo.core.commands.GetLastError
 import org.joda.time.DateTimeZone
 import org.joda.time.DateTime
+import controllers.jobs.LogActor
+import controllers.service.ConfigurationSetup
 
 @Api(value = "/reminder", description = "User Reminder Information")
 object ReminderController extends BaseApiController with MongoController {
@@ -61,8 +64,12 @@ object ReminderController extends BaseApiController with MongoController {
 		      resetDateWithoutHours.getMillis(),
 		      false
 		      )
-		  val update = emailValidCollection.update(userAuthId, Json.obj("$set"->emailObj), GetLastError(), upsert = true, multi = false)
-		  createEmail(userId, email.get, key:String, insDate)
+		      //Fix this
+		  val update = emailValidCollection.update(userAuthId, emailObj, GetLastError(), upsert = true, multi = false)
+		  update.onComplete{
+		    case Success(_) => createEmail(userId, email.get, key:String, insDate)
+		    case Failure(f) => LogActor.logActor ! "Unable to notify of new password user:"+f.getMessage()
+		  }
       }
     }
     
@@ -91,6 +98,7 @@ object ReminderController extends BaseApiController with MongoController {
             
             val update = reminderCollection.update(query, upd_jsonObj, GetLastError(), upsert = false, multi = false)
             
+            //If there is an email needed
             val message = update.map{
 	          result => {
 	        	  if(result.updated == 0){
@@ -154,7 +162,7 @@ object ReminderController extends BaseApiController with MongoController {
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def validateEmailReminder(userId:String, key:String) = Action.async(BodyParsers.parse.anyContent){request =>
+  def validateEmailReminder(userId:String, key:String) = Action.async{request =>
     val query = Json.obj("_id" -> userId, "key" -> key)
     
     val futureRemove = emailValidCollection.remove(query)
@@ -165,9 +173,10 @@ object ReminderController extends BaseApiController with MongoController {
     		val upd_query = Json.obj("_id" -> userId)
     		val updateObj = Json.obj("$set"->Json.obj("validEmail"->true))
     	    val futureUpdate = reminderCollection.update(upd_query, updateObj, GetLastError(), upsert = false, multi = false)
-    		JsonResponse(Ok(Json.obj("success" -> "ok")))
-      	}else
-      	   JsonResponse(Ok(Json.obj("error" -> "Not ok")))
+    	    Redirect(ConfigurationSetup.EMAIL_VALID_PATH)
+      	}else{
+      	  Redirect(ConfigurationSetup.EMAIL_INVALID_PATH)
+      	}
       }
     }
   }
@@ -230,14 +239,15 @@ object ReminderController extends BaseApiController with MongoController {
         id,
         userId, 
         date, 
+        EMAIL_VALIDATOR_TYPE ,
         userEmail, 
         emailMessage, 
         false
         )
     val updRec = emailCollection.update(query,notifyObj, GetLastError(), upsert=true, multi=false)
     updRec.onComplete{
-      case scala.util.Failure(f) => Logger.error("Failure in notifying user:["+userId+"]->"+f)
-      case scala.util.Success(success) => ;
+      case Failure(f) => Logger.error("Failure in notifying user:["+userId+"]->"+f)
+      case Success(success) => ;
     }
   }
 }

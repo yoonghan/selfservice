@@ -14,7 +14,16 @@ object UserModel {
   
   case class User(name:String, newUser:Boolean, authLevel:Option[Int], cpId:Option[String])
   case class UserName(firstName:String, lastName:String, newUser:Boolean)
-  case class UserMasked(firstName:String, lastName:String, maskId:String)
+  case class UserMasked(
+      conf:Boolean, 
+      firstName:String, 
+      lastName:String, 
+      addr:Option[String],
+      pstCd:Option[String], 
+      state:Option[String], 
+      email:Option[String], 
+      ctcNo:Option[String], 
+      maskId:String)
   case class UserProfileWithId(firstName:String, lastName:String, _id:String)
   case class UserProfile(
       firstName:String, 
@@ -22,19 +31,19 @@ object UserModel {
       lastName:String, 
       gender:String,
       country:String,
-      postCode:Option[String],
-      address:Option[String],
+      pstCd:Option[String],
+      addr:Option[String],
       email:Option[String],
-      contactNo:Option[String],
+      ctcNo:Option[String],
       state:String
       )
   case class UserStorageModel(
 	    id:String,
-	    address:Option[String],
-	    postCode:Option[String],
+	    addr:Option[String],
+	    pstCd:Option[String],
 	    state:Option[String],
 	    email:Option[String],
-	    contactNo:Option[String]
+	    ctcNo:Option[String]
 	    )
       
   implicit val userFormat = Json.format[User]
@@ -57,10 +66,10 @@ object UserModel {
       "lastName" -> nonEmptyText(2,30),
       "gender" -> nonEmptyText(1),
       "country" -> nonEmptyText(2,3),
-      "postcode" -> optional(text(5)).verifying("is not a valid Postal Code", _.getOrElse("").trim().matches(postalCodeExpr)),
-      "address" -> optional(text(1,100)),
+      "pstCd" -> optional(text(5)).verifying("is not a valid Postal Code", _.getOrElse("").trim().matches(postalCodeExpr)),
+      "addr" -> optional(text(1,100)),
       "email" -> optional(email),
-      "contactNo" -> optional(text(7,13)).verifying("is invalid only numbers allowed", _.getOrElse("").trim().matches(contactNoExpr)),
+      "ctcNo" -> optional(text(7,13)).verifying("is invalid only numbers allowed", _.getOrElse("").trim().matches(contactNoExpr)),
       "state" -> nonEmptyText(2,20)
   )(UserProfile.apply)(UserProfile.unapply)
   
@@ -71,10 +80,10 @@ object UserModel {
        case "lastName" => "Last Name"
        case "gender" => "Gender"
        case "country" => "Country"
-       case "postcode" => "Postcode"
-       case "address" => "Address"
+       case "pstCd" => "Postcode"
+       case "addr" => "Address"
        case "email" => "Email"
-       case "contactNo" => "Contact No"
+       case "ctcNo" => "Contact No"
        case "state" => "State"
        case _ => field
      }
@@ -88,10 +97,10 @@ object UserModel {
     	"lastName" -> userProfile.lastName,
     	"gender" -> userProfile.gender,
     	"country" -> userProfile.country,
-    	"postcode" -> userProfile.postCode.getOrElse(""),
-    	"address" -> userProfile.address.getOrElse(""),
+    	"pstCd" -> userProfile.pstCd.getOrElse(""),
+    	"addr" -> userProfile.addr.getOrElse(""),
     	"email" -> userProfile.email.getOrElse(""),
-    	"contactNo" -> userProfile.contactNo.getOrElse(""),
+    	"ctcNo" -> userProfile.ctcNo.getOrElse(""),
     	"state" -> userProfile.state
 	 ))
       

@@ -62,15 +62,17 @@ GET		/tools/calendarload					controllers.service.cal.CalendarController.reservat
 GET		/tools/reservationlist				controllers.service.cal.CalendarController.reservationList
 GET		/tools/usersinreservation/:id		controllers.service.cal.CalendarController.usersInReservations(id:String)
 DELETE	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_unreserve
+POST	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_reserve
 
 #Reservation
 GET		/tools/reserve						controllers.service.cal.CalendarController.reservedList
 POST	/tools/reserve						controllers.service.cal.CalendarController.reserve
 DELETE	/tools/reserve						controllers.service.cal.CalendarController.unreserve
+GET		/tools/pending						controllers.service.cal.CalendarController.pendingReserveList
 
 # Generate report
 POST	/report/gen							controllers.service.rest.ReportSettingController.genCorporateReport
-GET		/report/isAllow						controllers.service.rest.ReportSettingController.isAllow
+GET		/report/isallow						controllers.service.rest.ReportSettingController.isAllow
 GET		/report/setting						controllers.service.rest.ReportSettingController.setting
 POST	/report/setting						controllers.service.rest.ReportSettingController.settingIns
 

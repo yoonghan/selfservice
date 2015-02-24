@@ -22,4 +22,7 @@ object CommonKeys{
 	val TERNARY_POS_CONTACTNO = 3;
 	val TERNARY_POS_ADDRESS = 4;
   
+	val EMAIL_REMINDER_TYPE='R';
+	val EMAIL_VALIDATOR_TYPE='V';
+	
 }

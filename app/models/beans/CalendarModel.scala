@@ -7,7 +7,7 @@ import play.api.data.FormError
 import controllers.service.FormValidator
 import scala.util.{Either,Left,Right}
 import play.api.Logger
-import models.beans.UserModel.UserStorageModel
+import models.beans.UserModel.UserStorageModel 
 
 
 object CalendarModel {
@@ -15,19 +15,21 @@ object CalendarModel {
   val EVENT_TYPE="opt1"
   val OCCURRENCE_TYPE="opt2"
   
-  case class CalUnReserve(id:String, userId:String)
-  case class Calendar(title:String, start:Long, end: Long, allDay: Boolean, desc: String, availability: Int, userInfo:Option[Int], id:String)
-  case class CalendarRegisteredUser(title:String, start:Long, end: Long, allDay: Boolean, desc: String, registered:Option[List[UserStorageModel]], availability:Int, id:String)
-  case class CalendarWithoutId(title:String, start:Long, end: Long, allDay: Boolean, desc: String, userInfo:Int, availability: Int, userId:String, cpId:String)
-  case class TempCalendar(title:String, start:Long, end: Long, allDay: Boolean, desc: String, userInfo:Int, availability:Int, userId:String, virtualDel:Boolean, total:Int, count:Int)
+  case class CalCmdReserve(id:String, userId:String)
+  case class CalendarReserved(title:String, start:Long, end: Long, allDay: Boolean, desc: String, id:String)//need not to request excessive info
+  case class Calendar(title:String, start:Long, end:Long, allDay:Boolean, desc:String, avail:Int, userInfo:Int, conf:Boolean, id:String)
+  case class CalendarRegisteredUser(title:String, start:Long, end: Long, allDay: Boolean, desc: String, reg:Option[List[UserStorageModel]], pend:Option[List[UserStorageModel]], avail:Int, id:String)
+  case class CalendarWithoutId(title:String, start:Long, end: Long, allDay: Boolean, desc: String, userInfo:Int, avail: Int, conf:Boolean, userId:String, cpId:String)
+  case class TempCalendar(title:String, start:Long, end: Long, allDay: Boolean, desc: String, userInfo:Int, avail:Int, conf:Boolean, userId:String, virtualDel:Boolean, total:Int, count:Int)
   case class CalReservation(
       id:String,
+      conf:Boolean,
       userInfo: Int,
       state: Option[String],
-      postCode: Option[String],
-      address: Option[String],
+      pstCd: Option[String],
+      addr: Option[String],
 	  email: Option[String],
-	  contactNo: Option[String]
+	  ctcNo: Option[String]
       )
   case class CalCancellation(
       id:String
@@ -37,7 +39,8 @@ object CalendarModel {
       title:String, 
       desc:String,
       userInfo: Int,
-      fullDay:Boolean, 
+      fullDay:Boolean,
+      conf:Option[Boolean],
       reserveType:String, 
       timedEvents:List[TimedEvents],
       occurrence:List[Boolean],
@@ -55,12 +58,15 @@ object CalendarModel {
  
   implicit val calRead: Reads[Calendar] = mongoReads[Calendar](Json.reads[Calendar])
   implicit val calWrites: Writes[Calendar] = mongoWrites[Calendar](Json.writes[Calendar])
+  implicit val calResvRead: Reads[CalendarReserved] = mongoReads[CalendarReserved](Json.reads[CalendarReserved])
+  implicit val calResvWrites: Writes[CalendarReserved] = mongoWrites[CalendarReserved](Json.writes[CalendarReserved])
+  
   implicit val calReserveRead: Reads[CalReservation] = mongoReads[CalReservation](Json.reads[CalReservation])
   implicit val calReserveWrite: Writes[CalReservation] = mongoWrites[CalReservation](Json.writes[CalReservation])
   implicit val calCancellationRead: Reads[CalCancellation] = mongoReads[CalCancellation](Json.reads[CalCancellation])
   implicit val calCancellationWrite: Writes[CalCancellation] = mongoWrites[CalCancellation](Json.writes[CalCancellation])
-  implicit val calUnRegRead: Reads[CalUnReserve] = mongoReads[CalUnReserve](Json.reads[CalUnReserve])
-  implicit val calUnRegWrite: Writes[CalUnReserve] = mongoWrites[CalUnReserve](Json.writes[CalUnReserve])
+  implicit val calUnRegRead: Reads[CalCmdReserve] = mongoReads[CalCmdReserve](Json.reads[CalCmdReserve])
+  implicit val calUnRegWrite: Writes[CalCmdReserve] = mongoWrites[CalCmdReserve](Json.writes[CalCmdReserve])
   
   implicit val registeredUserRead: Reads[CalendarRegisteredUser] = mongoReads[CalendarRegisteredUser](Json.reads[CalendarRegisteredUser])
   implicit val registeredUserWrite: Writes[CalendarRegisteredUser] = mongoWrites[CalendarRegisteredUser](Json.writes[CalendarRegisteredUser])
@@ -75,6 +81,7 @@ object CalendarModel {
       "desc" -> nonEmptyText(2,300),
       "userInfo" -> number,
       "fullDay" -> boolean,
+      "confReq" -> optional(boolean),
       "reserveType" -> nonEmptyText(1,4),
       "timedEvents" -> list(mapping(
           "stime" -> nonEmptyText,
@@ -125,6 +132,7 @@ object CalendarModel {
        case "title" => "Title"
        case "desc" => "Description"
        case "fullDay" => "Full Day"
+       case "confReq" => "Confirmation Required"
        case "reserveType" => "Reserve Type"
        case "timedEvents.startTime" => "Start Time"
        case "timedEvents.endTime" => "End Time"
@@ -160,11 +168,11 @@ object CalendarModel {
       }
       
       import controllers.service.CommonKeys._
-      val toValidate = Map("postcode"->condition(reservationReq.postCode, TERNARY_POS_ADDRESS), 
-    		  				"address"->condition(reservationReq.address, TERNARY_POS_ADDRESS),
+      val toValidate = Map("pstCd"->condition(reservationReq.pstCd, TERNARY_POS_ADDRESS), 
+    		  				"addr"->condition(reservationReq.addr, TERNARY_POS_ADDRESS),
     		  				"state"->condition(reservationReq.state, TERNARY_POS_ADDRESS),
     		  				"email"->condition(reservationReq.email, TERNARY_POS_EMAIL),
-    		  				"contactNo"->condition(reservationReq.contactNo, TERNARY_POS_CONTACTNO))
+    		  				"ctcNo"->condition(reservationReq.ctcNo, TERNARY_POS_CONTACTNO))
     		  				
       val errorList = toValidate.filter(_._2.isRight)
       val errors = errorList.map(mapField => UserModel.matchField(mapField._1) + mapField._2.right.getOrElse(" unknown error"))
@@ -176,10 +184,10 @@ object CalendarModel {
 	      "Sample", //Something valid
 	      "O",//Something valid
 	      "MY",//Something valid
-	      toValidate.get("postcode").get.left.get, 
-	      toValidate.get("address").get.left.get,
+	      toValidate.get("pstCd").get.left.get, 
+	      toValidate.get("addr").get.left.get,
 	      toValidate.get("email").get.left.get,
-	      toValidate.get("contactNo").get.left.get,
+	      toValidate.get("ctcNo").get.left.get,
 	      toValidate.get("state").get.left.get.getOrElse("KL")
 	      )
 	      validateInput(userProfile)
