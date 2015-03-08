@@ -77,8 +77,8 @@ object CalendarModel {
   implicit val tempCalendarRW = Json.format[TempCalendar]
   
   private val validateSetupForm = mapping(
-      "title" -> nonEmptyText(2,30),
-      "desc" -> nonEmptyText(2,300),
+      "title" -> nonEmptyText(3,30),
+      "desc" -> nonEmptyText(3,300),
       "userInfo" -> number,
       "fullDay" -> boolean,
       "confReq" -> optional(boolean),

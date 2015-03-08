@@ -12,6 +12,7 @@ object FormValidator {
        case "error.required" => "cannot be blank"
        case "error.minLength" => "requires minimum of "
        case "error.maxLength" => "requires maximum of "
+       case "error.email" => "is not a valid email format"
        case _ => types
      }
   }

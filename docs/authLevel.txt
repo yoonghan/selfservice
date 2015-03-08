@@ -5,9 +5,9 @@
 ****0 is off, 1 is on
 
 #SQL
-> db.user.update({email:"gladys.leewan@gmail.com",otype:"F"},{$set:{authLevel:3}})
-> db.user.update({email:"gladys.leewan@gmail.com",otype:"F"},{$set:{cpId:"54b0f1ac814acf776f6ea2d7"}})
-> db.subscription.insert({cDesc: "A descriptive admission", cName: "Gladys", status: 1, userId:"F10152620103077022"})
+> db.user.update({email:"jomjaring@gmail.com",otype:"G"},{$set:{authLevel:3}})
+> db.user.update({email:"jomjaring@gmail.com",otype:"G"},{$set:{cpId:"54ec9b8ba950ac291107a6b8"}})
+> db.subscription.insert({cDesc: "Jom Jaring Scheduled Activity", cName: "Jom Jaring", status: 1, userId:"G10152620103077022"})
 
 #Check cookie in client side for usage, this allows subdomain to use the same cookie
 session.domain=.jomjaring.com

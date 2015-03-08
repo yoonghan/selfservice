@@ -188,8 +188,6 @@ object UserController extends BaseApiController with MongoController {
     import reactivemongo.core.commands.GetLastError
     
     val userProfile = request.body.validate[UserProfile];
-    val userId = request.session(USER_ID)
-    val oType = request.session(OTYPE)
     
     userProfile.fold(
         errors => {

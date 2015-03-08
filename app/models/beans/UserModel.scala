@@ -8,8 +8,8 @@ import controllers.service.FormValidator
 
 object UserModel {
   
-  private val contactNoExpr = """^\+?[0-9]*$"""
-  private val postalCodeExpr = """^[1-9]?[0-9]{0,4}$"""
+  private val contactNoExpr = """^\+?[0-9]+$"""
+  private val postalCodeExpr = """^[1-9][0-9]{4}$"""
   private val reduceValForMask = 1000
   
   case class User(name:String, newUser:Boolean, authLevel:Option[Int], cpId:Option[String])
@@ -66,10 +66,10 @@ object UserModel {
       "lastName" -> nonEmptyText(2,30),
       "gender" -> nonEmptyText(1),
       "country" -> nonEmptyText(2,3),
-      "pstCd" -> optional(text(5)).verifying("is not a valid Postal Code", _.getOrElse("").trim().matches(postalCodeExpr)),
+      "pstCd" -> optional(text(5)).verifying("is not a valid Postal Code", _.getOrElse("12345").trim().matches(postalCodeExpr)),
       "addr" -> optional(text(1,100)),
       "email" -> optional(email),
-      "ctcNo" -> optional(text(7,13)).verifying("is invalid only numbers allowed", _.getOrElse("").trim().matches(contactNoExpr)),
+      "ctcNo" -> optional(text(7,13)).verifying("is invalid only numbers allowed", _.getOrElse("0123456").trim().matches(contactNoExpr)),
       "state" -> nonEmptyText(2,20)
   )(UserProfile.apply)(UserProfile.unapply)
   

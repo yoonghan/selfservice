@@ -93,18 +93,23 @@ object ReminderController extends BaseApiController with MongoController {
               userAuthId
             }
         
-            val jsonObj = Json.toJson(reminderProfile)
-            val upd_jsonObj = jsonObj.as[JsObject] ++ userAuthId
+            val upd_jsonObj = Json.toJson(reminderProfile)
+            val upd_query = upd_jsonObj.as[JsObject]
             
-            val update = reminderCollection.update(query, upd_jsonObj, GetLastError(), upsert = false, multi = false)
+            val updateFuture = reminderCollection.update(query, Json.obj("$set"->(upd_query)), GetLastError(), upsert = false, multi = false)
+            //If there is an email needed   
             
-            //If there is an email needed
-            val message = update.map{
+            val message = updateFuture.map{
 	          result => {
 	        	  if(result.updated == 0){
 	        	    insertToEmailValidCollection(userCombination, reminderProfile.alertEmail)
-	        	    val mod_UpdObj = upd_jsonObj ++ Json.obj("validEmail"->false)
-	        	    reminderCollection.update(userAuthId, mod_UpdObj, GetLastError(), upsert = true, multi = false)
+	        	    val mod_UpdObj = upd_query ++ Json.obj("validEmail"->false) ++ userAuthId
+	        	    val collUpdate = reminderCollection.update(userAuthId, mod_UpdObj, GetLastError(), upsert = true, multi = false)
+	        	    
+	        	    collUpdate.onComplete{
+		              case Failure(f)=> LogActor.logActor ! (userAuthId+">>"+Json.stringify(mod_UpdObj)+">>"+f.getMessage())
+		              case Success(s)=>;
+		            }
 	          	  }
 	          }
 	        }
@@ -171,8 +176,12 @@ object ReminderController extends BaseApiController with MongoController {
         //use redirect
     	if(result.updated == 1){
     		val upd_query = Json.obj("_id" -> userId)
-    		val updateObj = Json.obj("$set"->Json.obj("validEmail"->true))
+    		val updateObj = Json.obj("$set"->Json.obj("validEmail" -> true))
     	    val futureUpdate = reminderCollection.update(upd_query, updateObj, GetLastError(), upsert = false, multi = false)
+    	    futureUpdate.onComplete{
+    		  case Failure(fail) => LogActor.logActor ! (Json.stringify(upd_query)+">>"+Json.stringify(updateObj)+">>"+fail.getMessage())
+    		  case Success(success) =>;
+    		}
     	    Redirect(ConfigurationSetup.EMAIL_VALID_PATH)
       	}else{
       	  Redirect(ConfigurationSetup.EMAIL_INVALID_PATH)

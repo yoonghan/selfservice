@@ -11,6 +11,7 @@ OPTIONS /*wholepath             			@controllers.service.BaseApiController.getOpt
 # API docs maintenance
 GET     /api-docs/image						controllers.ApiHelpController.getResource(path = "/image")
 GET     /api-docs/user						controllers.ApiHelpController.getResource(path = "/user")
+GET     /api-docs/admin						controllers.ApiHelpController.getResource(path = "/admin")
 GET     /api-docs/reminder					controllers.ApiHelpController.getResource(path = "/reminder")
 GET     /api-docs/calendar					controllers.ApiHelpController.getResource(path = "/calendar")
 GET     /api-docs/subscription				controllers.ApiHelpController.getResource(path = "/subscription")
@@ -36,6 +37,10 @@ PUT     /user/profile						controllers.service.rest.UserController.profileIns
 POST    /user/profile						controllers.service.rest.UserController.profileUpd
 GET		/user/testprofile					controllers.service.rest.UserController.testprofile
 
+#Admin service
+GET		/admin/profile						controllers.service.rest.AdminController.profile
+POST	/admin/profile						controllers.service.rest.AdminController.profileUpd
+
 #Reminder service
 GET     /reminder/profile					controllers.service.rest.ReminderController.profile
 POST    /reminder/profile					controllers.service.rest.ReminderController.profileIns
@@ -58,7 +63,6 @@ GET		/tools/calendarconf/:from/:to		controllers.service.cal.CalendarController.c
 POST	/tools/calendarconf					controllers.service.cal.CalendarController.copySetup
 DELETE	/tools/calendarconf					controllers.service.cal.CalendarController.deleteSetup
 GET		/tools/calendarload					controllers.service.cal.CalendarController.reservationProgress
-
 GET		/tools/reservationlist				controllers.service.cal.CalendarController.reservationList
 GET		/tools/usersinreservation/:id		controllers.service.cal.CalendarController.usersInReservations(id:String)
 DELETE	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_unreserve
