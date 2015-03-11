@@ -1,0 +1,41 @@
+@(subscriptionForm: Form[beans.SubscriptionModel.Subscription])(implicit flash:Flash, lang:Lang)
+@import helper._
+@import helper.twitterBootstrap._
+@import controllers.service.ConfigurationSetup
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Register for user</title>
+		<link rel="stylesheet" type="text/css" media="screen"
+			href='@routes.Assets.at("stylesheets/admin.css")'>
+    </head>
+    <body>
+	<h2>I'm not lazy, but I ain't hardworking either. This is a temporarily page created to test the framework functionality.</h2>
+
+		<div class="container">
+			@if(flash.get("success").isDefined){
+				<p><strong>Information Created. Click on the button for relogin.</strong></p>
+				<form action="@service.rest.routes.UserController.logout" method="GET">
+					<input type="Submit" value="Logout and Re-Login">
+				</form>
+			}
+		</div>
+		
+	@if(flash.get("success").isEmpty){
+		<div class="container">
+			@if(flash.get("error").isDefined){
+				<p class="help-inline"><strong>@flash.get("error")</strong></p>
+			}
+		</div>
+	
+
+		@helper.form(action = service.html.routes.AdminController.save()){
+			@helper.inputText(subscriptionForm("cName"), args = '_label->"Your Name as Provider")
+			@helper.textarea(subscriptionForm("cDesc"), args = 'rows -> 3, 'cols -> 50, '_label->"Description")
+			<input type="Submit" value="Submit">
+		}
+	}
+	
+    </body>
+</html>

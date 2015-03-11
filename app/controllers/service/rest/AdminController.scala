@@ -24,7 +24,7 @@ import models.auth.SecurityKey
 import models.beans.EnumTableList.{SUBSCRIPTION}
 
 @Api(value = "/admin", description = "All administrative controls")
-object AdminController extends BaseApiController with MongoController {
+object AdminController extends BaseApiController {
 
   def cpCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
   
@@ -39,7 +39,7 @@ object AdminController extends BaseApiController with MongoController {
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def profile = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE){request =>    
+  def profile = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){request =>    
     
     val cpId = request.session(CP_ID)
     
@@ -68,7 +68,7 @@ object AdminController extends BaseApiController with MongoController {
     httpMethod = "POST"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def profileUpd = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>
+  def profileUpd = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
     
     import reactivemongo.core.commands.GetLastError
     

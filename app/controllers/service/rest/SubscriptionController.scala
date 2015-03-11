@@ -25,13 +25,14 @@ import reactivemongo.core.commands.Match
 import reactivemongo.core.commands.Project
 import reactivemongo.bson.{BSONInteger,BSONArray,BSONBoolean,BSONDocument,BSONObjectID}
 import reactivemongo.core.commands.RawCommand
-import models.beans.EnumTableList.SUBSCRIPTION 
+import models.beans.EnumTableList.{SUBSCRIPTION,USER } 
 import controllers.jobs.LogActor
 
 @Api(value = "/subscription", description = "Subscription Information")
-object SubscriptionController extends BaseApiController with MongoController {
+object SubscriptionController extends BaseApiController {
   
   def subscriptionCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
+  def userCollection: JSONCollection = db.collection[JSONCollection](USER.toString())
 	
   /**
 	* Query all subscription list.
@@ -209,6 +210,52 @@ object SubscriptionController extends BaseApiController with MongoController {
 	/**REPLACEMENT until Mongo 2.6 works[E]**/
 		  Future.successful(JsonResponse(Created(Json.obj("success"->"ok"))))
 	})
+  }
+  
+  def createSubscription(userId:String, oType:String, authLvl:Int, sub:Subscription):Future[Boolean]={
+    
+    val userAuth = userIDCombination(oType, userId);
+    
+    val query = Json.obj("$or"->Json.arr(
+        Json.obj("userId" -> userAuth),Json.obj("cName" -> sub.cName.trim())
+        )) 
+    val cursor: Cursor[SubUserIdMapCpId] = subscriptionCollection.find(query).cursor[SubUserIdMapCpId]
+
+    val futureQuerySubscription: Future[List[SubUserIdMapCpId]] = cursor.collect[List](1)
+    futureQuerySubscription.flatMap{ queryRec =>
+      if(queryRec.size==0){
+        
+        val bsonId = BSONObjectID.generate.stringify 
+        val createSub = Subscription_Creation(bsonId, sub.cName , sub.cDesc , sub.cWebsite ,sub.cCtcNo,sub.cEmail , List(userAuth), userAuth, 2, 0)
+	    val futureInsSubscription = subscriptionCollection.insert(createSub)
+	    futureInsSubscription.flatMap(
+	        status => {
+	          if(status.ok){
+	            val query = Json.obj("id" -> userId, "otype" -> oType)
+	            val updateVal = Json.obj("$set"->Json.obj("cpId" -> bsonId,"authLevel" -> ( AUTH_CAL_CREATE_LVL | authLvl )))
+	            val futureUpdateUser = userCollection.update(query, updateVal, GetLastError(), false, false)
+	            futureUpdateUser.map{
+	              status =>
+	              if(status.updated == 1){
+	                val query = Json.obj("_id" -> Json.obj("$oid" -> bsonId))
+	                val updateVal = Json.obj("$set"->Json.obj("status" -> 1))
+	                subscriptionCollection.update(query, updateVal, GetLastError(), false, false)
+	                true
+	              }else{
+	                false
+	              }
+	            }
+	          }else
+	            Future.successful(false)
+	        }
+	    )
+      }else{
+        Future.successful(false)
+      }
+    }
+    
+    
+    
   }
 }
 

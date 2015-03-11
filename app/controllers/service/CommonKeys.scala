@@ -15,8 +15,8 @@ object CommonKeys{
 	  
 	val EMPTY_CPID = ""
     
-	val DEFAULT_AUTH_LVL = 1;
-	val AUTH_CAL_CREATE  = 2;
+	val AUTH_DEFAULT_LVL = 1;
+	val AUTH_CAL_CREATE_LVL  = 2;
 	
 	val TERNARY_POS_EMAIL = 2;
 	val TERNARY_POS_CONTACTNO = 3;

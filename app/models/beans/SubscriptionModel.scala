@@ -6,6 +6,7 @@ import controllers.service.FormValidator
 
 object SubscriptionModel {
   
+  private val wordExpr = """^([A-Z|a-z|0-9]+\s{0,1}[A-Z|a-z|0-9]*)*"""
   private val contactNoExpr = """^\+?[0-9]+$"""
   private val urlExpr = """^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$"""
   
@@ -14,6 +15,19 @@ object SubscriptionModel {
       cWebsite:Option[String],
       cCtcNo:Option[String],
       cEmail:Option[String],
+      ver:Int
+      )
+      
+  case class Subscription_Creation(
+      id:String,
+      cName:String,
+      cDesc:String,
+      cWebsite:Option[String],
+      cCtcNo:Option[String],
+      cEmail:Option[String],
+      subs:List[String],
+      userId:String,
+      status:Int,
       ver:Int
       )
       
@@ -58,6 +72,7 @@ object SubscriptionModel {
   
   implicit val subFormat = Json.format[Subscription]
   implicit val subEditFormat = Json.format[Subscription_Edit]
+  implicit val subCreateWrites:Writes[Subscription_Creation] = mongoWrites[Subscription_Creation](Json.writes[Subscription_Creation])
   
   implicit val subListRead:Reads[SubscriptionHost] = mongoReads[SubscriptionHost](Json.reads[SubscriptionHost])
   implicit val subListWrites:Writes[SubscriptionHost] = mongoWrites[SubscriptionHost](Json.writes[SubscriptionHost])
@@ -70,13 +85,29 @@ object SubscriptionModel {
   implicit val subUserIdMapCpIdRead:Reads[SubUserIdMapCpId] = mongoReads[SubUserIdMapCpId](Json.reads[SubUserIdMapCpId])
   implicit val subUserIdMapCpIdWrite:Writes[SubUserIdMapCpId] = mongoWrites[SubUserIdMapCpId](Json.writes[SubUserIdMapCpId])
   
+  private val cmp_cName = ("cName" -> nonEmptyText(3,100).verifying("must only contain words", _.matches(wordExpr)))
+  private val cmp_cDesc = ("cDesc" -> nonEmptyText(3,300).verifying("must only contain words", _.matches(wordExpr)))
+  private val cmp_cWebsite = ("cWebsite" -> optional(text(3)).verifying("is not a valid web URL", _.getOrElse("www.sample.com").trim().matches(urlExpr)))
+  private val cmp_cCtcNo = ("cCtcNo" -> optional(text(3,13)).verifying("is not a valid contact no", _.getOrElse("0123456").trim().matches(contactNoExpr)));
+  private val cmp_cEmail = ("cEmail" -> optional(email))
+  private val cmp_ver = ("ver" -> number)
+  
   private val validateSubscription_Edit = mapping(
-      "cDesc" -> nonEmptyText(3,300),
-      "cWebsite" -> optional(text(3)).verifying("is not a valid web URL", _.getOrElse("www.sample.com").trim().matches(urlExpr)),
-      "cCtcNo" -> optional(text(3,13)).verifying("is not a valid contact no", _.getOrElse("0123456").trim().matches(contactNoExpr)),
-      "cEmail" -> optional(email),
-      "ver" -> number
+      cmp_cDesc,
+      cmp_cWebsite,
+      cmp_cCtcNo,
+      cmp_cEmail,
+      cmp_ver
   )(Subscription_Edit.apply)(Subscription_Edit.unapply)
+  
+  val validateSubscription = mapping(
+	     cmp_cName,
+	     cmp_cDesc,
+	     cmp_cWebsite,
+	     cmp_cCtcNo,
+	     cmp_cEmail,
+	     cmp_ver
+	  )(Subscription.apply)(Subscription.unapply)
   
   def matchField(field:String):String = {
      field match {

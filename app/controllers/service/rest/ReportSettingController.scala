@@ -24,7 +24,7 @@ import models.beans.EnumTableList.REPORT_SETTING
 import controllers.jobs.ReportCreator
 
 @Api(value = "/reportsetting", description = "Report Setting")
-object ReportSettingController extends BaseApiController with MongoController {
+object ReportSettingController extends BaseApiController {
 	def reminderCollection: JSONCollection = db.collection[JSONCollection](REPORT_SETTING.toString())
 	
   /**
@@ -38,7 +38,7 @@ object ReportSettingController extends BaseApiController with MongoController {
     httpMethod = "POST"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def settingIns = AuthorizeUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>
+  def settingIns = AuthorizeUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
     
     import reactivemongo.core.commands.GetLastError
     
@@ -83,7 +83,7 @@ object ReportSettingController extends BaseApiController with MongoController {
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def setting = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE){request =>    
+  def setting = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){request =>    
 
     val cp_id = request.session(CP_ID)
 	val query = Json.obj("_id" -> cp_id);
@@ -110,7 +110,7 @@ object ReportSettingController extends BaseApiController with MongoController {
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"),
 		  			new ApiResponse(code = 404, message = "Record not found")))
-  def isAllow = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE){request =>    
+  def isAllow = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){request =>    
 
     val cp_id = request.session(CP_ID)
 	val query = Json.obj("_id" -> cp_id);
@@ -136,7 +136,7 @@ object ReportSettingController extends BaseApiController with MongoController {
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
-  def genCorporateReport = AuthorizeUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE){ request =>
+  def genCorporateReport = AuthorizeUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){ request =>
 	import models.beans.SubscriptionModel._
     val cpId = request.session(CP_ID)
     

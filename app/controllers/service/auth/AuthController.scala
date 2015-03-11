@@ -68,8 +68,8 @@ object AuthController extends BaseApiController with MongoController{
       val futureUserList: Future[List[User]] = cursor.collect[List]()
       val futureVal = futureUserList.map { userList =>
 		  userList.size match {
-		    case 1 => UserAccess(true , userList(0).cpId.getOrElse(EMPTY_CPID), userList(0).authLevel.getOrElse(DEFAULT_AUTH_LVL))
-		    case _ => UserAccess(false , EMPTY_CPID, DEFAULT_AUTH_LVL )
+		    case 1 => UserAccess(true , userList(0).cpId.getOrElse(EMPTY_CPID), userList(0).authLevel.getOrElse(AUTH_DEFAULT_LVL))
+		    case _ => UserAccess(false , EMPTY_CPID, AUTH_DEFAULT_LVL )
 		  }
 		}
       futureVal

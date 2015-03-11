@@ -24,7 +24,7 @@ import models.auth.SecurityKey
 import models.beans.EnumTableList.{PROFILE,USER} 
 
 @Api(value = "/user", description = "All user information")
-object UserController extends BaseApiController with MongoController {
+object UserController extends BaseApiController {
   
   def userCollection: JSONCollection = db.collection[JSONCollection](USER.toString())
   def profileCollection: JSONCollection = db.collection[JSONCollection](PROFILE.toString())
@@ -240,8 +240,8 @@ object UserController extends BaseApiController with MongoController {
       val setUSERID="114852108498604797792";
       val setTYPE="G";
       val userId = userIDCombination(setTYPE, setUSERID)
-      val accessLvl = AUTH_CAL_CREATE + DEFAULT_AUTH_LVL
-      val cpId = "54a4a4341d86e330ad740088";
+      val accessLvl = AUTH_CAL_CREATE_LVL + AUTH_DEFAULT_LVL
+      val cpId = "54feabab2c4125640307efea";
       
     	val con_jsonObj = Json.obj( "$set" -> Json.obj( "newUser" -> JsBoolean(true), "authLevel" -> accessLvl, "cpId" -> cpId))
     	userCollection.update(Json.obj("id"->setUSERID , "otype"-> setTYPE), con_jsonObj, GetLastError(), upsert = false, multi = false)

@@ -24,13 +24,7 @@ class ApplicationSpec extends Specification {
 
       status(home) must equalTo(OK)
       contentType(home) must beSome.which(_ == "text/html")
-      contentAsString(home) must contain ("Sorry, this page is just a servicing page.")
+      contentAsString(home) must contain ("Your new application is ready.")
     }
-    
-    "render api-docs page" in new WithApplication{
-      val imageApiDocs = route(FakeRequest(GET, "/api-docs/image")).get
-      status(imageApiDocs) must equalTo(OK)
-    }
-    
   }
 }

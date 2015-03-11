@@ -253,7 +253,7 @@ object CalendarController extends BaseApiController with MongoController{
     httpMethod = "PUT"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def create = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>    
+  def create = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>    
     val _userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
     val userId = userIDCombination(oType, _userId)
@@ -329,7 +329,7 @@ object CalendarController extends BaseApiController with MongoController{
     httpMethod = "POST"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def copySetup = AuthorizeUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>    
+  def copySetup = AuthorizeUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>    
 	    val userId = request.session(USER_ID)
 	    val cpId = request.session(CP_ID)
 		val oType = request.session(OTYPE)
@@ -407,7 +407,7 @@ object CalendarController extends BaseApiController with MongoController{
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
-  def reservationList = AuthorizeAsyncUser(BodyParsers.parse.anyContent,AUTH_CAL_CREATE){ request =>
+  def reservationList = AuthorizeAsyncUser(BodyParsers.parse.anyContent,AUTH_CAL_CREATE_LVL){ request =>
 	import models.beans.SubscriptionModel._
     val cpId = request.session(CP_ID)
 	
@@ -441,7 +441,7 @@ object CalendarController extends BaseApiController with MongoController{
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
-  def usersInReservations(id:String) = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE){ request =>   
+  def usersInReservations(id:String) = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){ request =>   
     
 	    val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
@@ -531,7 +531,7 @@ object CalendarController extends BaseApiController with MongoController{
     httpMethod = "DELETE"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def cmd_unreserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>    
+  def cmd_unreserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>    
 	val calReservation = request.body.validate[CalCmdReserve];
 	val cpId = request.session(CP_ID)
     	
@@ -558,7 +558,7 @@ object CalendarController extends BaseApiController with MongoController{
     httpMethod = "POST"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def cmd_reserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE){request =>
+  def cmd_reserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
     val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
 	val calReservation = request.body.validate[CalCmdReserve];
 	val cpId = request.session(CP_ID)

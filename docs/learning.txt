@@ -20,3 +20,5 @@ Forgetting C as a logical case to include.
 
 MongoDB database, object that have _id cannot be used with $set. E.g. db.collection.update({},{$set->{_id:"hi",name:"han})
 -->DatabaseException['Mod on _id not allowed' (code = 10148)]
+
+Never make any packages with "play" name. NEVER!

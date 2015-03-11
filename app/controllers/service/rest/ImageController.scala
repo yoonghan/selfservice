@@ -19,7 +19,7 @@ import controllers.service.BaseApiController
 import models.beans.EnumTableList.IMAGE 
 
 @Api(value = "/image", description = "All images information")
-object ImageController extends BaseApiController with MongoController {
+object ImageController extends BaseApiController {
 
   def collection: JSONCollection = db.collection[JSONCollection](IMAGE.toString())
 

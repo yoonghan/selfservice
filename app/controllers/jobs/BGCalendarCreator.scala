@@ -187,14 +187,26 @@ class BGCalendarCreator extends Actor{
 		    	}
 	    	}
 	    	  
-	    	/**TODO: Remove this in future and use bulk Insert**/
-	    	Thread.sleep(500);
 	    	Logger.info("Inserted, now sleeping. Only for simulation and to be removed");
 	    	
 	    	listingSplitAndInsert(finishing.drop(SIZE))
 		}
 	    
 	    listingSplitAndInsert(data);
+	}
+	
+	private def removeFromDatabase(userId:String){
+	    val db = ReactiveMongoPlugin.db
+	    val calTempCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
+	    import reactivemongo.core.commands.GetLastError
+	    val query = Json.obj("userId"->userId);
+		val updateRec = calTempCollection.remove(query, GetLastError(), false)
+//		updateRec.map{
+//          result => {
+//            if(result.updated == 0)
+//            	Logger.error("Nothing to be deleted");
+//          }
+//        }
 	}
   
 	
@@ -211,6 +223,7 @@ class BGCalendarCreator extends Actor{
 	    
 	    val finishing = generateData(filteredOffDates, rs.fullDay , rs.timedEvents, rs.title, rs.desc, rs.userInfo, rs.conf.getOrElse(false), userId )
 	    
+	    removeFromDatabase(userId);
 	    insertToDatabase(finishing, userId);
 	    	
 	    Logger.info("Completed Insertion of userId:-"+userId)
@@ -252,18 +265,7 @@ class BGCalendarCreator extends Actor{
 	  
 //Rejection instead of publishing
 	  case RemoveCalendar(userId) =>{
-	    //insert into database.
-	    val db = ReactiveMongoPlugin.db
-	    val calTempCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
-	    import reactivemongo.core.commands.GetLastError
-	    val query = Json.obj("userId"->userId);
-		val updateRec = calTempCollection.remove(query, GetLastError(), false)
-		updateRec.map{
-              result => {
-                if(result.updated == 0)
-                	Logger.error("Nothing to be deleted");
-              }
-            }
+	    removeFromDatabase(userId)
 	  }
 	  
 	  case _ =>{

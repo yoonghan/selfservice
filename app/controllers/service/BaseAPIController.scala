@@ -51,7 +51,7 @@ class BaseApiController extends Controller with MongoController{
   /**
    * Specific method created only to validate if the cookie is correct. This needs to be enhanced to do complex algorithm.
    */
-  def AuthorizeUser[A] (bp: BodyParser[A], authLevel:Int = DEFAULT_AUTH_LVL)(f:Request[A] => Result) :Action[A] = {
+  def AuthorizeUser[A] (bp: BodyParser[A], authLevel:Int = AUTH_DEFAULT_LVL)(f:Request[A] => Result) :Action[A] = {
     Action(bp) { request =>
     	try{
     		val userId = request.session(USER_ID)
@@ -74,7 +74,7 @@ class BaseApiController extends Controller with MongoController{
   /**
    * Specific method created only to validate if the cookie is correct. This needs to be enhanced to do complex algorithm.
    */
-  def AuthorizeAsyncUser[A] (bp: BodyParser[A], authLevel:Int = DEFAULT_AUTH_LVL)(f:Request[A] => Future[Result]) :Action[A] = {
+  def AuthorizeAsyncUser[A] (bp: BodyParser[A], authLevel:Int = AUTH_DEFAULT_LVL)(f:Request[A] => Future[Result]) :Action[A] = {
     Action.async(bp) { request =>
     	try{
     		val userId = request.session(USER_ID)
@@ -143,7 +143,7 @@ class BaseApiController extends Controller with MongoController{
    * Make sure hack with negative is filtered as & comparator is used.
    */
   private def validateAuthLevel(authLevel:Int, resultLevel:Option[Int]) = {
-    val authLvlFromResult = resultLevel.getOrElse(DEFAULT_AUTH_LVL)
+    val authLvlFromResult = resultLevel.getOrElse(AUTH_DEFAULT_LVL)
     
     if(authLvlFromResult > 0) 
     	((authLevel & authLvlFromResult) != 0)

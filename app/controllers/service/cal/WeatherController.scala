@@ -57,7 +57,7 @@ class WeatherWebSocketActor(out: ActorRef) extends Actor{
 	
 	def receive = {	  
 	  case msg:WeatherRequest =>{
-	    val (state, lat, long) = models.beans.WeatherModel.location.get(msg.state).get //default value is passed.
+	    val (state, lat, long) = models.beans.WeatherModel.location.get(msg.state).getOrElse(location.get("KL").get) //default value is passed.
 	    val convertedDate = convertDate(msg.date);
 	    
 	    val forecast = 

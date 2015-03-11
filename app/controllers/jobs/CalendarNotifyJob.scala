@@ -63,6 +63,9 @@ class CalendarNotifyActor extends UntypedActor {
   val dateFormat = "dd/MM/yyyy";
 	
   override def onReceive(msg:Any){
+    
+    Logger.info("Triggered Calendar Notify")
+    
     val currDate = (new DateTime(DateTimeZone.UTC))
     val resetDateWithoutHours = new DateTime(currDate.getYear(), currDate.getMonthOfYear(), currDate.getDayOfMonth(), 0, 0, 0);
     val dateSearch = resetDateWithoutHours.toString(dateFormat);
@@ -107,20 +110,31 @@ class CalendarNotifyActor extends UntypedActor {
   def searchUserRegistered(dateSearch:String, calList:List[CalendarRegisteredUser], period:Int){
     
     for(cal <- calList){
-      for(userRegistered <- cal.reg.get){
+      if(cal.reg.isDefined){
+        
+        import models.beans.UserModel.UserStorageModel
+        
+    	val listOfUsers:List[UserStorageModel] = cal.reg.get
+    	val ids = for(userStorage <- listOfUsers) yield (userStorage.id)
+    	
         val query = Json.obj(
-            "_id" -> userRegistered,
+            "_id" -> Json.obj("$in" -> Json.arr(ids)),
             "alertEmail" -> Json.obj("$exists" -> true, "$ne" -> ""),
             "reminderDays" -> Json.obj("$in" -> Json.arr(period)),
             "validEmail" -> true
             )
+        
+            Logger.info("IDS>>"+Json.stringify(query))
+         
         val searchQuery:Cursor[ReminderSetting] = reminderCollection.find(query).cursor[ReminderSetting]    
         
         val curFutureSubList: Future[List[ReminderSetting]] = searchQuery.collect[List]()
         
         curFutureSubList.map(usersReminder =>
-		  notifyViaEmail(dateSearch, usersReminder, cal)
+          if(usersReminder.size > 0)
+        	  notifyViaEmail(dateSearch, usersReminder, cal)
 		)
+      //}
       }
     }
     

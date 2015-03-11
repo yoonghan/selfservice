@@ -31,7 +31,7 @@ import controllers.jobs.LogActor
 import controllers.service.ConfigurationSetup
 
 @Api(value = "/reminder", description = "User Reminder Information")
-object ReminderController extends BaseApiController with MongoController {
+object ReminderController extends BaseApiController {
 	def reminderCollection: JSONCollection = db.collection[JSONCollection](REMINDER.toString())
 	def emailValidCollection: JSONCollection = db.collection[JSONCollection](EMAIL_VALID_LIST.toString())
 	def emailCollection: JSONCollection = db.collection[JSONCollection](EMAIL_NOTIFY_LIST.toString())
