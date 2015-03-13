@@ -115,17 +115,15 @@ class CalendarNotifyActor extends UntypedActor {
         import models.beans.UserModel.UserStorageModel
         
     	val listOfUsers:List[UserStorageModel] = cal.reg.get
-    	val ids = for(userStorage <- listOfUsers) yield (userStorage.id)
+    	val ids:List[String] = for(userStorage <- listOfUsers) yield (userStorage.id)
     	
         val query = Json.obj(
-            "_id" -> Json.obj("$in" -> Json.arr(ids)),
+            "_id" -> Json.obj("$in" -> ids),
             "alertEmail" -> Json.obj("$exists" -> true, "$ne" -> ""),
             "reminderDays" -> Json.obj("$in" -> Json.arr(period)),
             "validEmail" -> true
             )
         
-            Logger.info("IDS>>"+Json.stringify(query))
-         
         val searchQuery:Cursor[ReminderSetting] = reminderCollection.find(query).cursor[ReminderSetting]    
         
         val curFutureSubList: Future[List[ReminderSetting]] = searchQuery.collect[List]()
