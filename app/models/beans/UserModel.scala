@@ -12,7 +12,12 @@ object UserModel {
   private val postalCodeExpr = """^[1-9][0-9]{4}$"""
   private val reduceValForMask = 1000
   
-  case class User(name:String, newUser:Boolean, authLevel:Option[Int], cpId:Option[String])
+  case class UserLogin(
+      email:Option[String],
+      otype:String
+      )
+  
+  case class User(name:String, id:String, newUser:Boolean, authLevel:Option[Int], cpId:Option[String])
   case class UserName(firstName:String, lastName:String, newUser:Boolean)
   case class UserMasked(
       conf:Boolean, 
@@ -48,6 +53,7 @@ object UserModel {
       
   implicit val userFormat = Json.format[User]
   implicit val userNameFormat = Json.format[UserName]
+  implicit val userLoginFormat = Json.format[UserLogin]
   implicit val userMaskedFormat = Json.format[UserMasked]
   implicit val userProfileFormat = Json.format[UserProfile]
   implicit val userStorageFormat = Json.format[UserStorageModel]

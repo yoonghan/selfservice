@@ -11,7 +11,6 @@ OPTIONS /*wholepath             			@controllers.service.BaseApiController.getOpt
 # API docs maintenance
 GET     /api-docs/image						controllers.ApiHelpController.getResource(path = "/image")
 GET     /api-docs/user						controllers.ApiHelpController.getResource(path = "/user")
-GET     /api-docs/admin						controllers.ApiHelpController.getResource(path = "/admin")
 GET     /api-docs/reminder					controllers.ApiHelpController.getResource(path = "/reminder")
 GET     /api-docs/calendar					controllers.ApiHelpController.getResource(path = "/calendar")
 GET     /api-docs/subscription				controllers.ApiHelpController.getResource(path = "/subscription")
@@ -42,8 +41,10 @@ POST    /user/profile						controllers.service.rest.UserController.profileUpd
 GET		/user/testprofile					controllers.service.rest.UserController.testprofile
 
 #Admin service
-GET		/admin/profile						controllers.service.rest.AdminController.profile
-POST	/admin/profile						controllers.service.rest.AdminController.profileUpd
+GET		/subscription/profile				controllers.service.rest.SubscriptionController.profile
+POST	/subscription/profile				controllers.service.rest.SubscriptionController.profileUpd
+GET		/subscription/users					controllers.service.rest.SubscriptionController.subscribedManagers
+PUT		/subscription/user					controllers.service.rest.SubscriptionController.subscribeManager
 
 #Reminder service
 GET     /reminder/profile					controllers.service.rest.ReminderController.profile
@@ -53,8 +54,10 @@ GET		/reminder/verify					controllers.service.rest.ReminderController.validateEm
 
 #Subscription
 GET		/subscription/hosts					controllers.service.rest.SubscriptionController.hostlist
+GET		/subscription/image					controllers.service.rest.SubscriptionController.getCPImage
+GET		/subscription/image/:ext/:fileName	controllers.service.rest.SubscriptionController.getImage(ext:String,fileName:String)
 POST	/subscription/hosts					controllers.service.rest.SubscriptionController.updateHostList
-
+POST	/subscription/imgupload				controllers.service.rest.SubscriptionController.uploadImage
 
 #Weather service
 GET		/tools/weatherinfo					controllers.service.cal.WeatherController.index
@@ -86,6 +89,10 @@ POST	/report/setting						controllers.service.rest.ReportSettingController.setti
 
 # Rest interface
 GET		/rest/image/intro					controllers.service.rest.ImageController.findAllIntroImage
+
+# Utilities
+POST	/tools/upload						controllers.service.html.Upload.upload
+GET		/tools/upload						controllers.service.html.Upload.uploadGet
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file						controllers.Assets.at(path="/public", file)

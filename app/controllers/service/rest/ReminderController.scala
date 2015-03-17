@@ -13,7 +13,7 @@ import play.api.Play.current
 import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 import reactivemongo.api._
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import com.wordnik.swagger.annotations.ApiResponses
@@ -28,7 +28,7 @@ import reactivemongo.core.commands.GetLastError
 import org.joda.time.DateTimeZone
 import org.joda.time.DateTime
 import controllers.jobs.LogActor
-import controllers.service.ConfigurationSetup
+import utils.ConfigurationSetup
 
 @Api(value = "/reminder", description = "User Reminder Information")
 object ReminderController extends BaseApiController {

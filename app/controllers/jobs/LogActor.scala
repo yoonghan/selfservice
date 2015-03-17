@@ -32,7 +32,7 @@ class LogCheckJob extends UntypedActor {
     	//create this message as email and email it.
       val strMsg = msg.asInstanceOf[String]
       if( filter(strMsg)){
-        controllers.service.Utility.sendEmail(msg.asInstanceOf[String])
+        utils.Utility.sendEmail(msg.asInstanceOf[String])
       }
     }
     

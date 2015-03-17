@@ -2,7 +2,7 @@ package models.auth
 
 import com.jaring.jom.util.authentication._
 import com.jaring.jom.util.impl._
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 
 object OAuth2Authentication{
   

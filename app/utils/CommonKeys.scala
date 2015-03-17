@@ -1,4 +1,4 @@
-package controllers.service
+package utils
 
 import play.api.Play.current
 
@@ -12,6 +12,9 @@ object CommonKeys{
 	val LOCATION   = "loc"
 	val DEVICE_APP = "D_"
 	val DEVICE_APP_LENGTH = DEVICE_APP.length()
+	
+	val JSON_KEYWORD_ERRORS = "errors"
+	val JSON_KEYWORD_OK	= "success"
 	  
 	val EMPTY_CPID = ""
     
@@ -24,5 +27,7 @@ object CommonKeys{
   
 	val EMAIL_REMINDER_TYPE='R';
 	val EMAIL_VALIDATOR_TYPE='V';
+	
+	val PICTURE_FOLDER = "picture/";
 	
 }

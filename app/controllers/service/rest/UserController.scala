@@ -12,8 +12,8 @@ import play.api.Play.current
 import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 import reactivemongo.api._
-import controllers.service.CommonKeys._
-import controllers.service.ConfigurationSetup._
+import utils.CommonKeys._
+import utils.ConfigurationSetup._
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import com.wordnik.swagger.annotations.ApiResponses
@@ -241,7 +241,7 @@ object UserController extends BaseApiController {
       val setTYPE="G";
       val userId = userIDCombination(setTYPE, setUSERID)
       val accessLvl = AUTH_CAL_CREATE_LVL + AUTH_DEFAULT_LVL
-      val cpId = "54feabab2c4125640307efea";
+      val cpId = "550374462c4125ab0049afc6";
       
     	val con_jsonObj = Json.obj( "$set" -> Json.obj( "newUser" -> JsBoolean(true), "authLevel" -> accessLvl, "cpId" -> cpId))
     	userCollection.update(Json.obj("id"->setUSERID , "otype"-> setTYPE), con_jsonObj, GetLastError(), upsert = false, multi = false)

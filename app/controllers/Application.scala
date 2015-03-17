@@ -2,7 +2,7 @@ package controllers
 
 import play.api._
 import play.api.mvc._
-import controllers.service.ConfigurationSetup._
+import utils.ConfigurationSetup._
 
 object Application extends Controller {
 

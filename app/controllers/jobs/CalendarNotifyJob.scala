@@ -25,7 +25,7 @@ import models.beans.EnumTableList._
 import models.beans.CalendarModel.CalendarRegisteredUser
 import models.beans.ReminderModel.ReminderSetting
 import models.beans.EmailNotifyModel.{EmailNotify,Notify}
-import controllers.service.CommonKeys.EMAIL_REMINDER_TYPE 
+import utils.CommonKeys.EMAIL_REMINDER_TYPE 
 
  
 object CalendarNotifyJob {

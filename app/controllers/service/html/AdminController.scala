@@ -6,10 +6,10 @@ import play.api.data.Form
 import play.api.data.Forms.{mapping, number, optional, nonEmptyText}
 import controllers.service.BaseApiController
 import play.modules.reactivemongo.MongoController
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 import models.beans.SubscriptionModel._
 import play.api.i18n.Messages
-import controllers.service.ConfigurationSetup._
+import utils.ConfigurationSetup._
 import play.Logger
 import controllers.service.rest.SubscriptionController
 

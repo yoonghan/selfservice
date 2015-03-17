@@ -24,7 +24,7 @@ import reactivemongo.api.Cursor
 import models.beans.ReminderModel.ReminderSetting
 import models.beans.EmailNotifyModel.EmailNotify
 import models.beans.EnumTableList.EMAIL_NOTIFY_LIST
-import controllers.service.CommonKeys.{EMAIL_REMINDER_TYPE , EMAIL_VALIDATOR_TYPE }
+import utils.CommonKeys.{EMAIL_REMINDER_TYPE , EMAIL_VALIDATOR_TYPE }
 
 
 object EmailSendJob {
@@ -67,8 +67,8 @@ class EmailSendActor extends UntypedActor {
     emailsToSend.par.map{ email=>   
      
      email.emailType match{
-       case EMAIL_REMINDER_TYPE => controllers.service.Utility.sendEmail(Option(email.emailDist), "A Kind Reminder", email.message )
-       case EMAIL_VALIDATOR_TYPE => controllers.service.Utility.sendEmail(Option(email.emailDist), "Verify Your Email", email.message )
+       case EMAIL_REMINDER_TYPE => utils.Utility.sendEmail(Option(email.emailDist), "A Kind Reminder", email.message )
+       case EMAIL_VALIDATOR_TYPE => utils.Utility.sendEmail(Option(email.emailDist), "Verify Your Email", email.message )
        case _emailType => LogActor.logActor ! "Invalid email type sent:" + _emailType
      }
      

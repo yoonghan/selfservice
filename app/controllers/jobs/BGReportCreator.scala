@@ -22,7 +22,7 @@ import play.api.Play.current
 import reactivemongo.api.collections.default.BSONCollection
 import org.joda.time.DateTimeZone
 import play.api.libs.iteratee.Enumerator
-import controllers.service.ConfigurationSetup
+import utils.ConfigurationSetup
 import reactivemongo.api.Cursor
 import controllers.jobs.LogActor._
 import models.beans.EnumTableList._
@@ -30,7 +30,7 @@ import models.beans.UserModel._
 import play.api.libs.Files._
 import java.io.File
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import controllers.service.ConfigurationSetup._
+import utils.ConfigurationSetup._
 import java.io.FileOutputStream
 import org.apache.poi.ss.util.WorkbookUtil
 import org.apache.poi.xssf.usermodel.{XSSFSheet,XSSFCell,XSSFRow}
@@ -132,7 +132,7 @@ class BGReportCreator extends Actor{
 	    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
 	    		"Sincerity from,\n"+
 	    		"JOM Jaring";
-	    controllers.service.Utility.sendEmail(Option.empty, 
+	    utils.Utility.sendEmail(Option.empty, 
 	        "Event Report",
 	        message,
 	        fileName)
@@ -326,7 +326,7 @@ class BGReportCreator extends Actor{
 	    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
 	    		"Sincerity from,\n"+
 	    		"JOM Jaring";
-	    	controllers.service.Utility.sendEmail(Option.empty, 
+	    	utils.Utility.sendEmail(Option.empty, 
 	        "Event Report",
 	        message)
 	    }

@@ -6,8 +6,8 @@ import play.api.http._
 import play.api.libs.json._
 import play.api.mvc._
 import java.io.StringWriter
-import controllers.service.CommonKeys._
-import controllers.service.ConfigurationSetup._
+import utils.CommonKeys._
+import utils.ConfigurationSetup._
 import scala.concurrent.Future
 import controllers.jobs.LogActor
 import play.modules.reactivemongo.MongoController
@@ -19,10 +19,9 @@ import scala.concurrent.duration._
 import models.auth.SecurityKey
 import models.beans.EnumTableList.PASS_COLLECTOR
 import play.Logger
-
-//For cache
 import play.api.Play.current
 import play.api.cache.Cache
+import utils.Utility
 
 class BaseApiController extends Controller with MongoController{
   
@@ -47,6 +46,16 @@ class BaseApiController extends Controller with MongoController{
     JsonResponse(result).withHeaders(CACHE_CONTROL -> ("max-age:"+age))
   }
   
+  protected def ImageResponse(ext:String, imgBytes:Array[Byte], age: Long = -1) = {
+    val fileType = 
+      ext match {
+      case ".png" => "image/png"
+      case _ => "image/jpeg"
+    } 
+    
+    val cache_age = if(age == -1) "no-cache" else "max-age:"+age
+    Ok(imgBytes).as(fileType).withHeaders(CACHE_CONTROL -> cache_age)
+  }
     
   /**
    * Specific method created only to validate if the cookie is correct. This needs to be enhanced to do complex algorithm.

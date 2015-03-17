@@ -12,7 +12,7 @@ import play.api.Play.current
 import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 import reactivemongo.api._
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import com.wordnik.swagger.annotations.ApiResponses
@@ -131,7 +131,7 @@ object ReportSettingController extends BaseApiController {
    */
   @ApiOperation(
     nickname = "reportGeneration", 
-    value = "none/report", 
+    value = "Not Available", 
     notes = "Generate report based on user request", 
     httpMethod = "GET"
     )

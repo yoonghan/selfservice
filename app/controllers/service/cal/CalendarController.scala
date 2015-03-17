@@ -13,11 +13,8 @@ import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 import reactivemongo.api._
 import controllers.jobs.LogActor
-import controllers.service.CommonKeys._
-import com.wordnik.swagger.annotations.Api
-import com.wordnik.swagger.annotations.ApiOperation
-import com.wordnik.swagger.annotations.ApiResponses
-import com.wordnik.swagger.annotations.ApiResponse
+import utils.CommonKeys._
+import com.wordnik.swagger.annotations.{Api,ApiOperation,ApiResponses,ApiResponse,ApiImplicitParams,ApiImplicitParam,ApiParam}
 import scala.concurrent.duration._
 import play.api.data.Forms._
 import reactivemongo.core.commands.GetLastError
@@ -26,12 +23,14 @@ import scala.util.Success
 import controllers.jobs.CalendarCreator
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
-import controllers.service.ConfigurationSetup
+import utils.ConfigurationSetup
 import models.beans.SubscriptionModel
 import models.beans.UserModel.{UserProfileWithId,UserMasked,UserStorageModel,maskId,unmaskId}
 import models.beans.EnumTableList
 import controllers.jobs.ReportCreator
 import models.beans.UserModel
+import javax.ws.rs.PathParam
+
 
 /**
  * May move it as websocket in future. But concurrency now will be an issue.
@@ -50,12 +49,13 @@ object CalendarController extends BaseApiController with MongoController{
    */
   @ApiOperation(
     nickname = "getCalendarInformation", 
-    value = "calendar", 
-    notes = "Returns schedules available to user and had not yet been reserved.", 
+    value = "Available Event", 
+    notes = "Returns schedules available to user that had not yet been reserved.", 
     response = classOf[Calendar],
     httpMethod = "GET"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  @ApiResponses(Array(
+      new ApiResponse(code = 401, message = "User had no authorities to access")))
 	def schedules = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
 	    val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
@@ -102,7 +102,7 @@ object CalendarController extends BaseApiController with MongoController{
    */
   @ApiOperation(
     nickname = "getReservationInformation", 
-    value = "reservation", 
+    value = "Reserved Events", 
     notes = "Returns the schedules user had already reserved", 
     response = classOf[CalendarReserved],
     httpMethod = "GET"
@@ -125,7 +125,7 @@ object CalendarController extends BaseApiController with MongoController{
    */
   @ApiOperation(
     nickname = "getPendingReservedEntry", 
-    value = "pendingReservation", 
+    value = "Pending Events", 
     notes = "Returns the schedules user wish to be reserved but pending approval", 
     response = classOf[CalendarReserved],
     httpMethod = "GET"
@@ -148,12 +148,14 @@ object CalendarController extends BaseApiController with MongoController{
    */
   @ApiOperation(
     nickname = "Booking", 
-    value = "booking", 
-    notes = "Make a Booking", 
+    value = "Confirm Booking", 
+    notes = "Schedule A booking", 
     response = classOf[Calendar],
     httpMethod = "POST"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(value = "Event Id that needs to be reserved", required = true, dataType = "Calendar_Reservation", paramType = "body")))
   def reserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>    
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
@@ -224,7 +226,9 @@ object CalendarController extends BaseApiController with MongoController{
     response = classOf[Calendar],
     httpMethod = "DELETE"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(value = "Event Id that needs to be cancelled", required = true, dataType = "Calendar_Cancellation", paramType = "body")))
   def unreserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>    
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
@@ -435,13 +439,13 @@ object CalendarController extends BaseApiController with MongoController{
   @ApiOperation(
     nickname = "getUsersInReservation", 
     value = "Get user detail per reservation", 
-    notes = "Get user details per reservation, call getReservationDetails", 
+    notes = "Get user details per reservation from getReservationDetails call", 
     response = classOf[UserMasked],
     responseContainer = "List",
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
-  def usersInReservations(id:String) = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){ request =>   
+  def usersInReservations( @ApiParam(value = "ID of the event") @PathParam("id")id:String) = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){ request =>   
     
 	    val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)

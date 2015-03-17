@@ -1,4 +1,4 @@
-package controllers.service
+package utils
 
 import play.api.Logger
 import com.jaring.jom.util.email.EmailUtility
@@ -12,6 +12,18 @@ object Utility {
   
 	val testEnv:Option[String] = play.api.Play.current.configuration.getString("environment")
 	val testVal = "test"
+	  
+	def getImage(fileName:String):Array[Byte] ={
+		try{
+			val source = scala.io.Source.fromFile(ConfigurationSetup.ICON_FOLDER+fileName)(scala.io.Codec.ISO8859)
+			val byteArray = source.map(_.toByte).toArray
+			source.close()
+		    
+			byteArray
+		}catch{
+			case e:Exception=>Array[Byte]()
+		}
+	}
   
 	def sendEmail(message:String){
 	  

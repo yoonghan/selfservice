@@ -15,7 +15,7 @@ import models.auth.OAuth2Authentication
 import models.auth.OAuth2Authentication._
 import controllers.jobs.LogActor
 import scala.concurrent.Future
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 import models.beans.UserModel._
 import controllers.service.BaseApiController
 import models.auth.SecurityKey

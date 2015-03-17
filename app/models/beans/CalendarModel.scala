@@ -1,5 +1,6 @@
 package models.beans
 
+import utils.CommonKeys._
 import play.api.libs.json._
 import reactivemongo.bson._
 import play.api.data.Forms.{mapping, longNumber, nonEmptyText, text, optional, boolean, list, number}
@@ -7,8 +8,9 @@ import play.api.data.FormError
 import controllers.service.FormValidator
 import scala.util.{Either,Left,Right}
 import play.api.Logger
-import models.beans.UserModel.UserStorageModel 
-
+import models.beans.UserModel.UserStorageModel
+import com.wordnik.swagger.annotations.{ApiModel,ApiModelProperty}
+import scala.annotation.meta.field
 
 object CalendarModel {
   
@@ -21,18 +23,20 @@ object CalendarModel {
   case class CalendarRegisteredUser(title:String, start:Long, end: Long, allDay: Boolean, desc: String, reg:Option[List[UserStorageModel]], pend:Option[List[UserStorageModel]], avail:Int, id:String)
   case class CalendarWithoutId(title:String, start:Long, end: Long, allDay: Boolean, desc: String, userInfo:Int, avail: Int, conf:Boolean, userId:String, cpId:String)
   case class TempCalendar(title:String, start:Long, end: Long, allDay: Boolean, desc: String, userInfo:Int, avail:Int, conf:Boolean, userId:String, virtualDel:Boolean, total:Int, count:Int)
+  @ApiModel("Calendar_Reservation")
   case class CalReservation(
-      id:String,
-      conf:Boolean,
-      userInfo: Int,
-      state: Option[String],
-      pstCd: Option[String],
-      addr: Option[String],
-	  email: Option[String],
-	  ctcNo: Option[String]
+      @(ApiModelProperty @field)(position=1, value="id")id:String,
+      @(ApiModelProperty @field)(position=2)			conf:Boolean,
+      @(ApiModelProperty @field)(position=3)			userInfo: Int,
+      @(ApiModelProperty @field)(position=4)			state: Option[String],
+      @(ApiModelProperty @field)(position=5)			pstCd: Option[String],
+      @(ApiModelProperty @field)(position=6)			addr: Option[String],
+	  @(ApiModelProperty @field)(position=7)			email: Option[String],
+	  @(ApiModelProperty @field)(position=8)			ctcNo: Option[String]
       )
+  @ApiModel("Calendar_Cancellation")
   case class CalCancellation(
-      id:String
+      @(ApiModelProperty @field)(position=1, value="id")id:String
       )
   case class TimedEvents(stime:String, etime:String, abookings: Int)
   case class ReservationSetup(
@@ -167,7 +171,6 @@ object CalendarModel {
         }
       }
       
-      import controllers.service.CommonKeys._
       val toValidate = Map("pstCd"->condition(reservationReq.pstCd, TERNARY_POS_ADDRESS), 
     		  				"addr"->condition(reservationReq.addr, TERNARY_POS_ADDRESS),
     		  				"state"->condition(reservationReq.state, TERNARY_POS_ADDRESS),

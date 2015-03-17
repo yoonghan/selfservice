@@ -12,7 +12,7 @@ import akka.util.Timeout
 import scala.util.Try
 import akka.pattern.ask
 import scala.concurrent.duration._
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 
 object Authorize{
   private val authAsync: ActorRef = Akka.system().actorOf(Props[AuthActor], name="Authorization")

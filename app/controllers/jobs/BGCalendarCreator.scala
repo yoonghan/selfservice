@@ -25,7 +25,7 @@ import scala.util.Success
 import scala.util.Failure
 import org.joda.time.DateTimeZone
 import play.api.libs.iteratee.Enumerator
-import controllers.service.ConfigurationSetup
+import utils.ConfigurationSetup
 import reactivemongo.api.Cursor
 import models.beans.EnumTableList._
 import controllers.jobs.LogActor._
@@ -169,26 +169,22 @@ class BGCalendarCreator extends Actor{
 	    val db = ReactiveMongoPlugin.db
 	    val tmpCalCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
   
-	    val SIZE = 20
+	    val SIZE = 50
 	    
 	    def listingSplitAndInsert(finishing:IndexedSeq[TempCalendar]){
 	    	if(finishing.size == 0)
 	    	  return;
 	      
-	    	for(eachRec <- finishing.take(SIZE)){
-	    		val insRec = tmpCalCollection.insert(eachRec)
+	    	val enumerator = Enumerator.enumerate(finishing.take(SIZE))
+	    	val insRec = tmpCalCollection.bulkInsert(enumerator)
 	    		
-		    	insRec.onComplete{
-		    	  case Success(x) => ;
-		    	  case Failure(failure) =>{
-		    	    failure.printStackTrace();
-		    	    logActor ! ("Insert with error: UserId:-"+userId+",failure:-"+failure.getMessage())
-		    	  }
-		    	}
+	    	insRec.onComplete{
+	    	  case Success(x) => Logger.info("Completed bulk insert of:-"+finishing.size);
+	    	  case Failure(failure) =>{
+	    	    failure.printStackTrace();
+	    	    logActor ! ("Insert with error: UserId:-"+userId+",failure:-"+failure.getMessage())
+	    	  }
 	    	}
-	    	  
-	    	Logger.info("Inserted, now sleeping. Only for simulation and to be removed");
-	    	
 	    	listingSplitAndInsert(finishing.drop(SIZE))
 		}
 	    
@@ -226,7 +222,7 @@ class BGCalendarCreator extends Actor{
 	    removeFromDatabase(userId);
 	    insertToDatabase(finishing, userId);
 	    	
-	    Logger.info("Completed Insertion of userId:-"+userId)
+	    Logger.info("Completed receive of userId:-"+userId)
 	  }
 //Publishing Case
 	  case CopyCalendar(rs, cpId, userId) =>{

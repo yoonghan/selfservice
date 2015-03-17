@@ -1,6 +1,7 @@
-package controllers.service
+package utils
 
 import play.api.Play.current
+import play.Logger
 
 object ConfigurationSetup {
 
@@ -8,7 +9,8 @@ object ConfigurationSetup {
 	
 	val DATE_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy")
 	val DATETIME_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy hh:mm:ss")
-	val TEMP_FOLDER = current.configuration.getString("tempfile_folder.uri").get 
+	val TEMP_FOLDER = current.configuration.getString("tempfile_folder.uri").get
+	val ICON_FOLDER = current.configuration.getString("iconfile_folder.uri").get
 	
 	val MIN_BOOKING_HR = try{Integer.parseInt(bookinghr,10)} catch {case e:Exception => 0}
 	
@@ -25,4 +27,19 @@ object ConfigurationSetup {
 	//Email Controls
 	val EMAIL_VALID_PATH = current.configuration.getString("email.validated").get;
 	val EMAIL_INVALID_PATH = current.configuration.getString("email.invalidated").get;
+	
+	//Control Upload Size
+	val MAX_UPLOAD_SIZE:Int = {
+	  val uploadSize = current.configuration.getString("uploadSize").get
+	  //Get type Mega/Kilo of bytes
+	  val factor = uploadSize.charAt(uploadSize.length-1).toUpper
+	  val size = uploadSize.dropRight(1).toInt
+	  if(factor.toUpper == 'M'){
+			size * 1024 * 1024
+	  }else if(factor.toUpper == 'K'){
+		  size * 1024
+	  }else{
+		  size * 1024
+	  }
+	}
 }

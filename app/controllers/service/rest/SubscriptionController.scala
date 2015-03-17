@@ -8,11 +8,12 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json._
 import models.beans.SubscriptionModel._
+import models.beans.UserModel.{UserLogin,User}
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 import reactivemongo.api._
-import controllers.service.CommonKeys._
+import utils.CommonKeys._
 import com.wordnik.swagger.annotations.Api
 import com.wordnik.swagger.annotations.ApiOperation
 import com.wordnik.swagger.annotations.ApiResponses
@@ -25,8 +26,12 @@ import reactivemongo.core.commands.Match
 import reactivemongo.core.commands.Project
 import reactivemongo.bson.{BSONInteger,BSONArray,BSONBoolean,BSONDocument,BSONObjectID}
 import reactivemongo.core.commands.RawCommand
-import models.beans.EnumTableList.{SUBSCRIPTION,USER } 
+import models.beans.EnumTableList.{SUBSCRIPTION,USER }
 import controllers.jobs.LogActor
+import scala.io.Source
+import utils.ConfigurationSetup
+import java.nio.file.{Files,StandardCopyOption}
+import utils.Utility
 
 @Api(value = "/subscription", description = "Subscription Information")
 object SubscriptionController extends BaseApiController {
@@ -50,7 +55,7 @@ object SubscriptionController extends BaseApiController {
     
 	val userId = request.session(USER_ID)
 	val oType = request.session(OTYPE)
-	val query = Json.obj("del" -> false);
+	val query = Json.obj("del" -> false)
 	val userAuth = userIDCombination(oType, userId)
 	
 	/**HALTED - This is only working in Mongo 2.6 onwards**/
@@ -104,6 +109,7 @@ object SubscriptionController extends BaseApiController {
 		            subList.id ,
 		            subList.cName ,
 		            subList.cDesc ,
+		            subList.ext ,
 		            isSubscribed
 		            )
 		      })
@@ -132,7 +138,7 @@ object SubscriptionController extends BaseApiController {
     
 	val userId = request.session(USER_ID)
 	val oType = request.session(OTYPE)
-	val query = Json.obj("del" -> false);
+	val query = Json.obj("del" -> false)
 	val userAuth = userIDCombination(oType, userId)
 	
 	val subscribedIds = request.body.validate[SubscribedIds]
@@ -140,7 +146,7 @@ object SubscriptionController extends BaseApiController {
 	subscribedIds.fold(
 		errors => {
 		          Logger.info(errors.toString)
-		        	Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+		        	Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")))
 		        },
 		subId => {
 	/**HALTED - This is only working in Mongo 2.6[S] onwards**/	  
@@ -198,13 +204,13 @@ object SubscriptionController extends BaseApiController {
 		  futureIns.onFailure{
 		    case f => {
 		      LogActor.logActor ! "Error insertion on subscription for: "+userId+" >> "+f.getMessage()  
-		      f.printStackTrace();
+		      f.printStackTrace()
 		    }
 		  }
 		  futureDel.onFailure{
 		    case f => {
 		      LogActor.logActor ! "Error deleting subscription for: "+userId+" >> "+f.getMessage()  
-		      f.printStackTrace();
+		      f.printStackTrace()
 		    }
 		  }
 	/**REPLACEMENT until Mongo 2.6 works[E]**/
@@ -214,7 +220,7 @@ object SubscriptionController extends BaseApiController {
   
   def createSubscription(userId:String, oType:String, authLvl:Int, sub:Subscription):Future[Boolean]={
     
-    val userAuth = userIDCombination(oType, userId);
+    val userAuth = userIDCombination(oType, userId)
     
     val query = Json.obj("$or"->Json.arr(
         Json.obj("userId" -> userAuth),Json.obj("cName" -> sub.cName.trim())
@@ -238,8 +244,8 @@ object SubscriptionController extends BaseApiController {
 	              status =>
 	              if(status.updated == 1){
 	                val query = Json.obj("_id" -> Json.obj("$oid" -> bsonId))
-	                val updateVal = Json.obj("$set"->Json.obj("status" -> 1))
-	                subscriptionCollection.update(query, updateVal, GetLastError(), false, false)
+	                val updateSub = Json.obj("$set"->Json.obj("status" -> 1))
+	                subscriptionCollection.update(query, updateSub, GetLastError(), false, false)
 	                true
 	              }else{
 	                false
@@ -253,9 +259,252 @@ object SubscriptionController extends BaseApiController {
         Future.successful(false)
       }
     }
+  }
+  
+  /**
+   * Get content provider information
+   */
+  @ApiOperation(
+    nickname = "getContentProviderInformation", 
+    value = "Basic content provider profile", 
+    notes = "Returns CP profile", 
+    response = classOf[Subscription],
+    httpMethod = "GET"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  def profile = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){request =>    
     
+    val cpId = request.session(CP_ID)
     
+    val query = Json.obj("_id" -> Json.obj("$oid"->cpId))
+	val cursor:Cursor[Subscription] = subscriptionCollection.find(query).cursor[Subscription]
+	val futureProfileList: Future[List[Subscription]] = cursor.collect[List]()
+	
+    futureProfileList.map { profileList =>
+      profileList.size match {
+        case 0 => JsonResponse(NotFound(Json.obj()))
+        case _ => {
+          JsonResponse(Ok(Json.toJson(profileList(0))))
+        }
+      }
+    }
+  }
+
+  /**
+   * Update profile
+   */
+  @ApiOperation(
+    nickname = "updateContentProviderProfile", 
+    value = "Update content provider profile", 
+    notes = "Update content provider profile, content provider profile must be created before hand.", 
+    response = classOf[String],
+    httpMethod = "POST"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  def profileUpd = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
+        
+    val cpProfile = request.body.validate[Subscription_Edit]
+    val userId = request.session(USER_ID)
+    val oType = request.session(OTYPE)
+    val cpId = request.session(CP_ID) 
     
+    cpProfile.fold(
+        errors => {
+          Future.successful(JsonResponse(BadRequest(Json.obj("error"->"Unexpected Request, what have you sent?"))))
+        },
+        cpProfile => {
+          val errorList = validateSubscription_Edit(cpProfile)
+          if(errorList.isEmpty){
+            val jsonObj = Json.toJson(cpProfile)
+            val modifiedObj = jsonObj.as[JsObject].-("ver")
+            
+            val query = Json.obj("ver" -> cpProfile.ver, "_id" -> Json.obj("$oid"->cpId))
+            val updateQuery = Json.obj("$set" -> modifiedObj, "$inc" -> Json.obj( "ver" -> 1))
+            val futureUpdate = subscriptionCollection.update(query, updateQuery, GetLastError(), upsert = false, multi = false)
+            futureUpdate.map{ lastError =>
+              if(lastError.updated == 1)
+                JsonResponse(Created(Json.obj("success"->"OK")))
+              else
+                JsonResponse(NotFound(Json.obj("errors"->Json.arr("Someone has done a concurrent modification on this profile. Please reset to retrieve latest profile."))))
+            }
+          }else{
+            Future.successful(JsonResponse(BadRequest(toSubscriptionError(errorList))))
+          }
+        }
+      )
+  }
+  
+  /**
+   * Retrieve subscription managers
+   */
+  @ApiOperation(
+    nickname = "retrieveSubscriptionManager", 
+    value = "Retrieve subscription managers", 
+    notes = "Retrieve Subscription of the admin.", 
+    response = classOf[String],
+    responseContainer = "List",
+    httpMethod = "GET"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  def subscribedManagers = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
+    val cpId = request.session(CP_ID)
+	val query = Json.obj("cpId" -> cpId, "newUser" -> false)
+	
+	val cursor: Cursor[UserLogin] = userCollection.find(Json.obj()).cursor[UserLogin]
+
+    val futureUserReg: Future[List[UserLogin]] = cursor.collect[List]()
+	
+    futureUserReg.map { userList =>
+      userList.size match {
+        case 0 => JsonResponse(NotFound(Json.obj()))
+        case _ => {
+          JsonResponse(Ok(Json.toJson(userList)))
+        }
+      }
+	}
+  }
+
+  @ApiOperation(
+    nickname = "allowUserToManage", 
+    value = "Allow user to manage", 
+    notes = "Allow user to manage.", 
+    response = classOf[String],
+    responseContainer = "List",
+    httpMethod = "GET"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  def subscribeManager = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
+    val cpId = request.session(CP_ID)
+    val inputLogin = request.body.validate[UserLogin]
+	
+    inputLogin.fold(
+        errors => {
+          Future.successful(JsonResponse(BadRequest(Json.obj("error"->"Unexpected Request, what have you sent?"))))
+        },
+        userProfile => {
+          if(userProfile.email.isDefined){
+            
+            val query = Json.obj("otype" -> userProfile.otype, "email" -> userProfile.email, "newUser" -> false )
+			val cursor:Cursor[User] = subscriptionCollection.find(query).cursor[User]
+			val futureProfileList: Future[List[User]] = cursor.collect[List]()
+			
+		    futureProfileList.flatMap { profileList =>
+		      profileList.size match {
+		        case 1 => {
+		          val authLevel = profileList(0).authLevel.getOrElse(AUTH_DEFAULT_LVL )
+				  val query = Json.obj("id" -> profileList(0).id, "otype" -> userProfile.otype)
+				  val updateQuery = Json.obj("$set"->Json.obj("cpId" -> cpId,"authLevel" -> ( AUTH_CAL_CREATE_LVL |  authLevel )))
+				  val futureUpdate = userCollection.update(query, updateQuery, GetLastError(), upsert = false, multi = false)
+				  futureUpdate.map{ lastError =>
+				    if(lastError.updated == 1)
+				    	JsonResponse(Created(Json.obj("success"->"OK")))
+				    else
+				    	JsonResponse(NotFound(Json.obj("errors"->"User not found")))
+				  }
+		        }
+		        case _ => {
+		          Future.successful(JsonResponse(NotFound(Json.obj("errors"->"User not found"))))
+		        }
+		      }
+		    }
+            
+          }else{
+            Future.successful(JsonResponse(BadRequest(Json.obj("errors"->"Email is empty"))))
+          }
+        }
+      )
+  }
+
+  
+  /**
+   * Add image to subscription
+   */
+  @ApiOperation(
+    nickname = "ImageSubscription", 
+    value = "Add image to subscription", 
+    notes = "Add image to subscription", 
+    response = classOf[String],
+    httpMethod = "POST"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  def uploadImage() = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
+    
+    def copyImage(from_ImgName:String, to_ImgName:String):Boolean = {
+      val successful = try{
+	      val fromFile = new java.io.File(ConfigurationSetup.TEMP_FOLDER + PICTURE_FOLDER + from_ImgName)
+	      val toFile = new java.io.File(ConfigurationSetup.ICON_FOLDER + to_ImgName)
+	      Files.move(fromFile.toPath(), toFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+	      true
+      }catch{
+      	case e:Exception => Logger.error("imgName:" + e.getMessage()); false 
+      }
+      successful
+    }
+    
+    val msgInput = request.body.validate[SubscriptionImg]
+    msgInput.fold(
+        errors => {
+          Future.successful(JsonResponse(BadRequest(Json.obj(utils.CommonKeys.JSON_KEYWORD_ERRORS->"Unexpected Request, what have you sent?"))))
+        },
+        subImg => {
+          val ext = subImg.ext 
+          val ver = subImg.ver 
+          val cpId = request.session(CP_ID)
+          val userAuth = userIDCombination(request.session(OTYPE), request.session(USER_ID))
+          
+		  if(ext == ".jpg" || ext == ".jpeg" || ext == ".png"){
+		    
+		    if(copyImage(userAuth+ext, cpId+ext)){
+		    
+			    val query = Json.obj("ver"->ver, "_id"->Json.obj("$oid"->cpId))
+			    val updateObj = Json.obj("$set" -> Json.obj("ext" -> ext), "$inc" -> Json.obj( "ver" -> 1))
+			    val futureUpdate = subscriptionCollection.update(query, updateObj, GetLastError(), false, false)
+			    futureUpdate.map{ lastError =>
+			    if(lastError.updated == 1)
+			    	JsonResponse(Created(Json.obj(utils.CommonKeys.JSON_KEYWORD_OK ->"OK")))
+			    else
+			    	JsonResponse(NotFound(Json.obj(utils.CommonKeys.JSON_KEYWORD_ERRORS ->"Records have been updated. Please refresh.")))
+			    }
+		    }else{
+		      Future.successful(JsonResponse(NotFound(Json.obj(utils.CommonKeys.JSON_KEYWORD_ERRORS ->"File has been updated. Please refresh."))))
+		    }
+		  }else{
+		    Future.successful(JsonResponse(BadRequest(Json.obj(utils.CommonKeys.JSON_KEYWORD_ERRORS->"Unsupported file type."))))
+		  }
+        })
+  }
+  
+  @ApiOperation(
+    nickname = "CPImage", 
+    value = "Show CP image", 
+    notes = "Show CP image", 
+    response = classOf[String],
+    httpMethod = "POST"
+    )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
+  def getCPImage() = AuthorizeAsyncUser(BodyParsers.parse.anyContent){
+    request => {
+      val cpId = request.session(CP_ID)
+      val query = Json.obj("_id"->Json.obj("$oid"->cpId), "ext"-> Json.obj("$exists" -> true))
+      val cursor: Cursor[SubscriptionImg] = subscriptionCollection.find(Json.obj()).cursor[SubscriptionImg]
+
+      val futureCpImg: Future[List[SubscriptionImg]] = cursor.collect[List]()
+	
+      futureCpImg.map { cpImg =>
+	      cpImg.size match {
+	        case 0 => JsonResponse(NotFound(Json.obj()))
+	        case _ => {
+	          val ext = cpImg(0).ext
+	          ImageResponse(ext, Utility.getImage(cpId+cpImg(0).ext))
+	        }
+	      }
+      }
+    }
+  }
+  
+  def getImage(ext:String, file:String) = AuthorizeUser(BodyParsers.parse.anyContent){
+    request=>
+      ImageResponse(ext, Utility.getImage(file+ext), 3600)
   }
 }
 
