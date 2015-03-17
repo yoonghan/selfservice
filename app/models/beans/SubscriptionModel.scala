@@ -64,7 +64,7 @@ object SubscriptionModel {
       unsubs:List[String])
       
   case class SubscriptionImg(
-      ext:String,
+      ext:Option[String],
       ver:Int)
       
   def mongoReads[T](r: Reads[T]) = {

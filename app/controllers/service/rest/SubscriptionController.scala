@@ -447,15 +447,15 @@ object SubscriptionController extends BaseApiController {
           Future.successful(JsonResponse(BadRequest(Json.obj(utils.CommonKeys.JSON_KEYWORD_ERRORS->"Unexpected Request, what have you sent?"))))
         },
         subImg => {
-          val ext = subImg.ext 
+          val ext = subImg.ext.get 
           val ver = subImg.ver 
           val cpId = request.session(CP_ID)
           val userAuth = userIDCombination(request.session(OTYPE), request.session(USER_ID))
           
+          Logger.info(ext+":"+ver+":"+cpId+":")
+          
 		  if(ext == ".jpg" || ext == ".jpeg" || ext == ".png"){
-		    
-		    if(copyImage(userAuth+ext, cpId+ext)){
-		    
+		    if(copyImage(userAuth+ext, cpId+ext)){		    
 			    val query = Json.obj("ver"->ver, "_id"->Json.obj("$oid"->cpId))
 			    val updateObj = Json.obj("$set" -> Json.obj("ext" -> ext), "$inc" -> Json.obj( "ver" -> 1))
 			    val futureUpdate = subscriptionCollection.update(query, updateObj, GetLastError(), false, false)
@@ -489,13 +489,14 @@ object SubscriptionController extends BaseApiController {
       val cursor: Cursor[SubscriptionImg] = subscriptionCollection.find(Json.obj()).cursor[SubscriptionImg]
 
       val futureCpImg: Future[List[SubscriptionImg]] = cursor.collect[List]()
-	
+
       futureCpImg.map { cpImg =>
 	      cpImg.size match {
 	        case 0 => JsonResponse(NotFound(Json.obj()))
 	        case _ => {
-	          val ext = cpImg(0).ext
-	          ImageResponse(ext, Utility.getImage(cpId+cpImg(0).ext))
+	          val ext = cpImg(0).ext.get
+
+	          ImageResponse(ext, Utility.getImage(cpId+ext))
 	        }
 	      }
       }
