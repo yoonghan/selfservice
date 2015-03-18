@@ -142,7 +142,7 @@ class BGReportCreator extends Actor{
 	   * Close excel
 	   */
 	  def closeExcel(wb:XSSFWorkbook) = {
-	    val fileName = ConfigurationSetup.TEMP_FOLDER + "excel_" + corporateId + EXCEL_TYPE;
+	    val fileName = ConfigurationSetup.FOLDER_TEMP + "excel_" + corporateId + EXCEL_TYPE;
 	    val tempFile = new TemporaryFile(new File(fileName))
 	    val file = new FileOutputStream(tempFile.file)
 	    try{

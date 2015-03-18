@@ -27,7 +27,4 @@ object CommonKeys{
   
 	val EMAIL_REMINDER_TYPE='R';
 	val EMAIL_VALIDATOR_TYPE='V';
-	
-	val PICTURE_FOLDER = "picture/";
-	
 }

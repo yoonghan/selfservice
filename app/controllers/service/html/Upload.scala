@@ -62,15 +62,6 @@ object Upload extends BaseApiController with FlowHelper {
     }
   }
   
-  def saveImage = AuthorizeUser(multipartMaxLengthParser, CommonKeys.AUTH_CAL_CREATE_LVL) {
-    implicit request =>{
-      
-      val file:File = new File(ConfigurationSetup.ICON_FOLDER)
-      
-      Ok
-    }
-  }
-
   def uploadGet() = Action {
     request =>
       val userId = request.session(CommonKeys.USER_ID)

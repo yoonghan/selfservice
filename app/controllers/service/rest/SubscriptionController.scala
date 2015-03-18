@@ -431,8 +431,8 @@ object SubscriptionController extends BaseApiController {
     
     def copyImage(from_ImgName:String, to_ImgName:String):Boolean = {
       val successful = try{
-	      val fromFile = new java.io.File(ConfigurationSetup.TEMP_FOLDER + PICTURE_FOLDER + from_ImgName)
-	      val toFile = new java.io.File(ConfigurationSetup.ICON_FOLDER + to_ImgName)
+	      val fromFile = new java.io.File(ConfigurationSetup.FOLDER_TEMP + ConfigurationSetup.FOLDER_PICTURE + from_ImgName)
+	      val toFile = new java.io.File(ConfigurationSetup.FOLDER_STORE + ConfigurationSetup.FOLDER_PICTURE + to_ImgName)
 	      Files.move(fromFile.toPath(), toFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
 	      true
       }catch{

@@ -9,8 +9,10 @@ object ConfigurationSetup {
 	
 	val DATE_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy")
 	val DATETIME_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy hh:mm:ss")
-	val TEMP_FOLDER = current.configuration.getString("tempfile_folder.uri").get
-	val ICON_FOLDER = current.configuration.getString("iconfile_folder.uri").get
+	
+	val FOLDER_TEMP = current.configuration.getString("tempfile_folder.uri").get
+	val FOLDER_STORE = current.configuration.getString("storefile_folder.uri").get
+	val FOLDER_PICTURE = "picture/";
 	
 	val MIN_BOOKING_HR = try{Integer.parseInt(bookinghr,10)} catch {case e:Exception => 0}
 	

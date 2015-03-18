@@ -15,7 +15,7 @@ object Utility {
 	  
 	def getImage(fileName:String):Array[Byte] ={
 		try{
-			val source = scala.io.Source.fromFile(ConfigurationSetup.ICON_FOLDER+fileName)(scala.io.Codec.ISO8859)
+			val source = scala.io.Source.fromFile(ConfigurationSetup.FOLDER_STORE+ConfigurationSetup.FOLDER_PICTURE+fileName)(scala.io.Codec.ISO8859)
 			val byteArray = source.map(_.toByte).toArray
 			source.close()
 		    

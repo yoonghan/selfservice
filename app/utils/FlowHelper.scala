@@ -10,7 +10,7 @@ import play.api.mvc.{MultipartFormData, RequestHeader}
  */
 trait FlowHelper {
 
-  val base_dir: String = ConfigurationSetup.TEMP_FOLDER+"picture/"
+  val base_dir: String = ConfigurationSetup.FOLDER_TEMP+"picture/"
 
   protected def getFlowChunkNumber(request: RequestHeader): Int =
     request.getQueryString("flowChunkNumber").fold(-1)(_.toInt)
