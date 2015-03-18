@@ -21,6 +21,7 @@ class Global extends GlobalSettings {
       }
       
       override def onLoadConfig(config: Configuration, path: File, classloader: ClassLoader): Configuration = {
+        
         	initialize(
         	    storeFolder=config.getString("storefile_folder.uri"),
         	    tempFolder = config.getString("tempfile_folder.uri")
@@ -29,9 +30,13 @@ class Global extends GlobalSettings {
         super.onLoadConfig(config, path, classloader)
       }
       
+      /**
+       * Please use print instead of logger. Logger have not been loaded in production.
+       */
       private def initialize(storeFolder:String, tempFolder:String){
+        println("Start Initialize file")
         checkFolder(_strFolder = storeFolder, _tmpFolder = tempFolder)
-        clearTempFolder(_tmpFolder=tempFolder)
+        //clearTempFolder(_tmpFolder=tempFolder) // cannot work in production, not sure of why. Scala problem?
       }
       
       private def checkFolder(_strFolder:String, _tmpFolder:String){
@@ -42,10 +47,10 @@ class Global extends GlobalSettings {
           val extraFolder = Array("picture/")
           
           if( ! storeFolder.exists()){
-            Logger.info("Created:"+ storeFolder.getAbsolutePath()  + ",stat:" + storeFolder.mkdir())
+            println("Created:"+ storeFolder.getAbsolutePath()  + ",stat:" + storeFolder.mkdir())
           }
           if( ! tempFolder.exists()){
-            Logger.info("Created:"+ tempFolder.getAbsolutePath() + ",stat:" + tempFolder.mkdir())
+            println("Created:"+ tempFolder.getAbsolutePath() + ",stat:" + tempFolder.mkdir())
           }
           
           for(perFolder <- extraFolder){
@@ -54,10 +59,10 @@ class Global extends GlobalSettings {
             val sub_tempFolder = new File(_tmpFolder+perFolder)
             
             if( ! sub_storeFolder.exists()){
-            	Logger.info("Created:"+sub_storeFolder.getAbsolutePath() + ",stat:" + sub_storeFolder.mkdir())
+            	println("Created:"+sub_storeFolder.getAbsolutePath() + ",stat:" + sub_storeFolder.mkdir())
             }
             if( ! sub_tempFolder.exists()){
-            	Logger.info("Created:"+sub_tempFolder.getAbsolutePath() + ",stat:" + sub_tempFolder.mkdir())
+            	println("Created:"+sub_tempFolder.getAbsolutePath() + ",stat:" + sub_tempFolder.mkdir())
             }
           }
         }catch{
@@ -71,14 +76,18 @@ class Global extends GlobalSettings {
       private def clearTempFolder(_tmpFolder:String){        
         val tempFolder = new File(_tmpFolder)
         val files = tempFolder.listFiles()
-        if(files.size > 0){
-			for(subFile:File <- files){
-			  Logger.info("Clear folder:"+tempFolder.getAbsolutePath());
-				if(subFile.isFile()){
-				  Logger.info("Removing files in:"+subFile.getName())
-				  subFile.delete()
+        try{
+	        if(files!=null && ! files.isEmpty){
+				for(subFile:File <- files){
+				  Logger.info("Clear folder:"+tempFolder.getAbsolutePath());
+					if(subFile.isFile()){
+					  Logger.info("Removing files in:"+subFile.getName())
+					  subFile.delete()
+					}
 				}
 			}
-		}
+        }finally{
+          //do nothing
+        }
       }
 }
