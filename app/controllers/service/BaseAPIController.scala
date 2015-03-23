@@ -50,6 +50,7 @@ class BaseApiController extends Controller with MongoController{
     val fileType = 
       ext match {
       case ".png" => "image/png"
+      case ".gif" => "image/gif"
       case _ => "image/jpeg"
     } 
     

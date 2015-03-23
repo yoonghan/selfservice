@@ -274,7 +274,7 @@ object CalendarController extends BaseApiController with MongoController{
           if(errorList.isEmpty){
             val writeObj = reservationSetupRW.writes(setup);
 
-            val insRec = resCollection.insert((Json.obj( "userId" -> userId))  ++ writeObj)
+            val insRec = resCollection.insert((Json.obj( "userId" -> userId))  ++ writeObj.as[JsObject])
             insRec.map{
                 result =>
                 if(result.ok){
@@ -447,7 +447,7 @@ object CalendarController extends BaseApiController with MongoController{
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   def usersInReservations( @ApiParam(value = "ID of the event") @PathParam("id")id:String) = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){ request =>   
     
-	    val userId = request.session(USER_ID)
+    val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 		val userName = userIDCombination(oType,userId)
 		val cpId = request.session(CP_ID)
@@ -459,64 +459,63 @@ object CalendarController extends BaseApiController with MongoController{
 //	          Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")))
 //	        },
 //			cal => {
-		      val query = Json.obj("_id" -> Json.obj("$oid"-> id ), "cpId" -> cpId)
-		      
-		      val cursor:Cursor[CalendarRegisteredUser] = calCollection.find(query).cursor[CalendarRegisteredUser]
-		      val futureCal: Future[List[CalendarRegisteredUser]] = cursor.collect[List](1)
-		      
-		      futureCal.flatMap { cal => 
-				cal.size match {
-				  case 1 => {
-				    //Need to have both reg and pend, this is wrong!
-				    val registeredUsers:List[UserStorageModel] = {
-				      if(cal(0).reg.isDefined)
-				        cal(0).reg.get
-				      else
-				        Nil
-				    }
-				    val pendingUsers:List[UserStorageModel] = {
-				      if(cal(0).pend.isDefined)
-				        cal(0).pend.get
-				      else
-				         Nil
-				    }
-				    val queryIns = Json.obj(
-				        "_id" -> Json.obj("$in" -> 
-				        (registeredUsers.map( storageInfo => storageInfo.id) ++ pendingUsers.map( storageInfo => storageInfo.id))
-				        ))
-				        
-				    val cursor:Cursor[UserProfileWithId] = profileCollection.find(queryIns).cursor[UserProfileWithId]
-				    val futureCalList: Future[List[UserProfileWithId]] = cursor.collect[List]()
-				    
-				    //Store all into maps
-				    val pendingMap = pendingUsers.map(t => t.id -> t).toMap
-				    val registeredMap = registeredUsers.map(t => t.id -> t).toMap
-				    
-				    futureCalList.map { calList =>
-				      val masked = calList.map( cal =>{
-				        
-				        val user = registeredMap.get(cal._id).getOrElse(pendingMap.get(cal._id).get) //will always exist in either
+    val query = Json.obj("_id" -> Json.obj("$oid"-> id ), "cpId" -> cpId)
 
-				        UserMasked(
-				            pendingMap.contains(cal._id),
-				            cal.firstName,
-				            cal.lastName,
-				            user.addr,
-				            user.pstCd,
-				            user.state,
-				            user.email ,
-				            user.ctcNo,
-				            maskId(cal._id))
-				      }
-				      )
-				      JsonResponse(Ok(Json.toJson(masked)))
-				    }
-				  }
-				  case _ => {
-				    Future.successful(JsonResponse(BadRequest(Json.obj("error"->"No such record"))))
-				  }
-				}
-		      }
+    val cursor:Cursor[CalendarRegisteredUser] = calCollection.find(query).cursor[CalendarRegisteredUser]
+    val futureCal: Future[List[CalendarRegisteredUser]] = cursor.collect[List](1)
+
+    futureCal.flatMap { cal =>
+      cal.size match {
+      case 1 => {
+        //Need to have both reg and pend, this is wrong!
+        val registeredUsers:List[UserStorageModel] = {
+          if(cal(0).reg.isDefined)
+            cal(0).reg.get
+          else
+            Nil
+        }
+        val pendingUsers:List[UserStorageModel] = {
+          if(cal(0).pend.isDefined)
+            cal(0).pend.get
+          else
+             Nil
+        }
+        val queryIns = Json.obj(
+            "_id" -> Json.obj("$in" ->
+            (registeredUsers.map( storageInfo => storageInfo.id) ++ pendingUsers.map( storageInfo => storageInfo.id))
+            ))
+
+        val cursor:Cursor[UserProfileWithId] = profileCollection.find(queryIns).cursor[UserProfileWithId]
+        val futureCalList: Future[List[UserProfileWithId]] = cursor.collect[List]()
+
+        //Store all into maps
+        val pendingMap = pendingUsers.map(t => t.id -> t).toMap
+        val registeredMap = registeredUsers.map(t => t.id -> t).toMap
+
+        futureCalList.map { calList =>
+          val masked = calList.map( cal =>{
+
+            val user = registeredMap.get(cal._id).getOrElse(pendingMap.get(cal._id).get) //will always exist in either
+
+            UserMasked(
+                pendingMap.contains(cal._id),
+                cal.firstName,
+                cal.lastName,
+                user.addr,
+                user.pstCd,
+                user.state,
+                user.email ,
+                user.ctcNo,
+                maskId(cal._id))
+          })
+          JsonResponse(Ok(Json.toJson(masked)))
+        }
+      }
+      case _ => {
+        Future.successful(JsonResponse(BadRequest(Json.obj("error"->"No such record"))))
+      }
+    }
+    }
 //			}
 //		)
   }

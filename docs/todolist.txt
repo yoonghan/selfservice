@@ -1,2 +1,1 @@
-1) Create automatic picture/ folder during load
-2) Remove all files in temp. **Move non temp to special folder**
+1) Remove all files in temp. **Cannot work in prod**

@@ -38,13 +38,17 @@ GET     /user/accesses						controllers.service.rest.UserController.accesses
 GET     /user/profile						controllers.service.rest.UserController.profile
 PUT     /user/profile						controllers.service.rest.UserController.profileIns
 POST    /user/profile						controllers.service.rest.UserController.profileUpd
-GET		/user/testprofile					controllers.service.rest.UserController.testprofile
+GET		/user/testprofile   				controllers.service.rest.UserController.testprofile(code:Int = 1)
+GET		/user/testprofile/:code				controllers.service.rest.UserController.testprofile(code:Int)
+GET     /user/registrationno                controllers.service.rest.UserController.getRegistrationNo
 
 #Admin service
 GET		/subscription/profile				controllers.service.rest.SubscriptionController.profile
 POST	/subscription/profile				controllers.service.rest.SubscriptionController.profileUpd
-GET		/subscription/users					controllers.service.rest.SubscriptionController.subscribedManagers
 PUT		/subscription/user					controllers.service.rest.SubscriptionController.subscribeManager
+GET		/subscription/users					controllers.service.rest.UserController.subscribedManagers
+PUT     /subscription/user/:id              controllers.service.rest.UserController.addUserAsProvider(id:String)
+DELETE  /subscription/user/:id              controllers.service.rest.UserController.removeUserFromRegistration(id:String)
 
 #Reminder service
 GET     /reminder/profile					controllers.service.rest.ReminderController.profile

@@ -88,7 +88,7 @@ object SubscriptionModel {
   implicit val subUserIdMapCpIdWrite:Writes[SubUserIdMapCpId] = mongoWrites[SubUserIdMapCpId](Json.writes[SubUserIdMapCpId])
   
   private val cmp_cName = ("cName" -> nonEmptyText(3,100).verifying("must only contain words", _.matches(wordExpr)))
-  private val cmp_cDesc = ("cDesc" -> nonEmptyText(3,300).verifying("must only contain words", _.matches(wordExpr)))
+  private val cmp_cDesc = ("cDesc" -> nonEmptyText(3,300))
   private val cmp_cWebsite = ("cWebsite" -> optional(text(3)).verifying("is not a valid web URL", _.getOrElse("www.sample.com").trim().matches(urlExpr)))
   private val cmp_cCtcNo = ("cCtcNo" -> optional(text(3,13)).verifying("is not a valid contact no", _.getOrElse("0123456").trim().matches(contactNoExpr)));
   private val cmp_cEmail = ("cEmail" -> optional(email))

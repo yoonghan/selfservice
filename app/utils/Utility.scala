@@ -1,5 +1,7 @@
 package utils
 
+import java.net.URL
+
 import play.api.Logger
 import com.jaring.jom.util.email.EmailUtility
 import java.io.File
@@ -24,6 +26,20 @@ object Utility {
 			case e:Exception=>Array[Byte]()
 		}
 	}
+
+  def getImageURL(text:String, width:String, height:String):Array[Byte] ={
+    try{
+      val rplUrl = ConfigurationSetup.IMAGE_GENERATOR.replace("""{width}""",width).replace("""{height}""",height).replace("""{text}""",text)
+      Logger.info("The url:"+rplUrl)
+      val source = scala.io.Source.fromURL(rplUrl)(scala.io.Codec.ISO8859)
+      val byteArray = source.map(_.toByte).toArray
+      source.close()
+
+      byteArray
+    }catch{
+      case e:Exception=>e.printStackTrace();Array[Byte]()
+    }
+  }
   
 	def sendEmail(message:String){
 	  

@@ -22,3 +22,5 @@ MongoDB database, object that have _id cannot be used with $set. E.g. db.collect
 -->DatabaseException['Mod on _id not allowed' (code = 10148)]
 
 Never make any packages with "play" name. NEVER!
+
+Do not make the naming "id" to the model, id and _id is confusing and makes the program hard to decode, name it to aid

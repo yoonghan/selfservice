@@ -14,10 +14,11 @@ object UserModel {
   
   case class UserLogin(
       email:Option[String],
-      otype:String
-      )
-  
-  case class User(name:String, id:String, newUser:Boolean, authLevel:Option[Int], cpId:Option[String])
+      otype:String,
+      id:String)
+  case class UserConfidential(_id:String, id:String, otype:String)
+  case class User(id:String, otype:String, name:String, newUser:Boolean, authLevel:Option[Int], cpId:Option[String])
+  case class UserIdentity(name:String, email:String)
   case class UserName(firstName:String, lastName:String, newUser:Boolean)
   case class UserMasked(
       conf:Boolean, 
@@ -29,7 +30,28 @@ object UserModel {
       email:Option[String], 
       ctcNo:Option[String], 
       maskId:String)
-  case class UserProfileWithId(firstName:String, lastName:String, _id:String)
+  case class UserProfileWithId(
+      _id:String,
+      firstName:String,
+      midName:Option[String],
+      lastName:String,
+      gender:String,
+      country:String,
+      pstCd:Option[String],
+      addr:Option[String],
+      email:Option[String],
+      ctcNo:Option[String],
+      state:String
+      )
+  case class ContentProviderViewProfile(
+       maskId:String,
+       firstName:String,
+       midName:Option[String],
+       lastName:String,
+       gender:String,
+       email:Option[String],
+       ctcNo:Option[String]
+       )
   case class UserProfile(
       firstName:String, 
       midName:Option[String], 
@@ -51,6 +73,14 @@ object UserModel {
 	    ctcNo:Option[String]
 	    )
       
+  def mongoReads[T](r: Reads[T]) = {
+    __.json.update((__ \ '_id).json.copyFrom((__ \ '_id \ '$oid).json.pick[JsString] )) andThen r
+  }
+ 
+  def mongoWrites[T](w : Writes[T]) = {
+    w.transform( js => js.as[JsObject] - "_id"  ++ Json.obj("_id" -> Json.obj("$oid" -> js \ "_id")) )
+  }
+	    
   implicit val userFormat = Json.format[User]
   implicit val userNameFormat = Json.format[UserName]
   implicit val userLoginFormat = Json.format[UserLogin]
@@ -58,12 +88,15 @@ object UserModel {
   implicit val userProfileFormat = Json.format[UserProfile]
   implicit val userStorageFormat = Json.format[UserStorageModel]
   implicit val userProfileWithIdFormat = Json.format[UserProfileWithId]
-  
+  implicit val contentProviderViewProfileFormat = Json.format[ContentProviderViewProfile]
+  implicit val userReadFormat:Reads[User] =  mongoReads[User](Json.format[User])
+  implicit val userWriteFormat:Writes[User] = mongoWrites[User](Json.format[User])
+  implicit val userConfidentialRead:Reads[UserConfidential] = mongoReads[UserConfidential](Json.reads[UserConfidential])
+  implicit val userConfidentialWrites:Writes[UserConfidential] = mongoWrites[UserConfidential](Json.writes[UserConfidential])
+
   def toUserError(errorList:List[String]) = {
     val errorArray = errorList.foldLeft(JsArray())((acc, x) => acc ++ Json.arr(x))
-    Json.obj(
-      "errors" -> errorArray
-    )
+    utils.CommonKeys.JSON_KEYWORD_ERRORS(errorArray)
   }
   
   private val validateForm = mapping(
