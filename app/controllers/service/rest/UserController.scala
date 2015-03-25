@@ -139,7 +139,8 @@ object UserController extends BaseApiController {
   def getRegistrationNo = AuthorizeAsyncUser(BodyParsers.parse.empty){request =>
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
-
+    val width = "600"
+    val height = "50"
     val query = Json.obj("id" -> userId, "otype" -> oType)
 
     val cursor:Cursor[UserConfidential] = userCollection.find(query).cursor[UserConfidential]
@@ -149,10 +150,10 @@ object UserController extends BaseApiController {
           case 1 =>{
             val encrypt_id = hashCodeUserLogin(oType=oType, userList(0)._id)
 
-            JsonResponse(ImageResponse(".gif",Utility.getImageURL(encrypt_id, width="600", height="50")))
+            JsonResponse(ImageResponse(".gif",Utility.getImageURL(encrypt_id, width=width, height=height)))
           }
           case _ =>
-            JsonResponse(NotFound(JSON_KEYWORD_ERRORS("User not found")));
+            JsonResponse(ImageResponse(".gif",Utility.getImageURL("No id found. Are you logged in?", width=width, height=height)))
       }
     }
   }
@@ -160,7 +161,7 @@ object UserController extends BaseApiController {
   @ApiOperation(
   nickname = "addUserIdsForRegistration",
   value = "Add User for Registration",
-  notes = "Returns basic user fit for registration",
+  notes = "Register user",
   response = classOf[String],
   httpMethod = "PUT"
   )
@@ -169,7 +170,7 @@ object UserController extends BaseApiController {
 
     val (oType, realId) = unhashCodeUserLogin(userCode)
 
-    if(oType == " " || realId == " " || realId.length != MONGODB_HEX_ID_LENGTH){
+    if(oType == " " || realId == " " || !realId.matches(MONGODB_HEX_ID_PATTERN)){
       Future.successful(JsonResponse(NotFound(ERR_COMMON_NO_RECORD_FOUND)))
     }else {
 
@@ -184,7 +185,7 @@ object UserController extends BaseApiController {
       futureUserList.flatMap { userList =>
         userList.size match {
           case 1 => {
-            val q_userQuery = userQuery ++ Json.obj("cpId" -> Json.obj("$not" -> Json.obj("$eq" -> cpId)))
+            val q_userQuery = userQuery ++ Json.obj("cpId" -> Json.obj("$ne" -> cpId))
             val updateVal = Json.obj("$set" -> Json.obj("cpId" -> cpId, "authLevel" -> (AUTH_CAL_CREATE_LVL | userList(0).authLevel.getOrElse(AUTH_DEFAULT_LVL))))
             val futureUpdateUser = userCollection.update(q_userQuery, updateVal, GetLastError(), false, false)
             futureUpdateUser.map {

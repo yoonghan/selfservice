@@ -39,5 +39,5 @@ object CommonKeys{
 	val EMAIL_REMINDER_TYPE='R';
 	val EMAIL_VALIDATOR_TYPE='V';
 
-  val MONGODB_HEX_ID_LENGTH = 24;
+  val MONGODB_HEX_ID_PATTERN = """[0-9|a-f]{24}""";
 }
