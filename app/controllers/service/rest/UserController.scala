@@ -112,12 +112,12 @@ object UserController extends BaseApiController {
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def profile = AuthorizeAsyncUser(BodyParsers.parse.empty){request =>
     
-	val userId = request.session(USER_ID)
-	val oType = request.session(OTYPE)
+    val userId = request.session(USER_ID)
+    val oType = request.session(OTYPE)
 
-	val cursor:Cursor[UserProfile] = profileCollection.find(Json.obj("_id" -> userIDCombination(oType,userId))).cursor[UserProfile]
-	val futureProfileList: Future[List[UserProfile]] = cursor.collect[List]()
-	
+    val cursor:Cursor[UserProfile] = profileCollection.find(Json.obj("_id" -> userIDCombination(oType,userId))).cursor[UserProfile]
+    val futureProfileList: Future[List[UserProfile]] = cursor.collect[List]()
+
     futureProfileList.map { profileList =>
       profileList.size match {
         case 0 => JsonResponse(NotFound(ERR_COMMON_NO_RECORD_FOUND))
@@ -283,28 +283,28 @@ object UserController extends BaseApiController {
     val userProfile = request.body.validate[UserProfile];
     
     userProfile.fold(
-        errors => {
-          JsonResponse(BadRequest(JSON_KEYWORD_ERRORS("Unexpected Request, what have you sent?")));
-        },
-        profile => {
-          val errorList = validateInput(profile)
-          if(errorList.isEmpty){
-            
-            val userId = request.session(USER_ID)
-            val oType = request.session(OTYPE)
-            val jsonObj = Json.toJson(profile)
-            
-            val ins_jsonObj = jsonObj.as[JsObject] + ("_id" -> JsString( userIDCombination(oType , userId) ))
-            val con_jsonObj = Json.obj( "$set" -> Json.obj( "newUser" -> JsBoolean(false)))
-            Logger.info("USER_ID: "+userIDCombination(oType , userId))
-            profileCollection.insert(ins_jsonObj)
-            userCollection.update(Json.obj("id"->userId , "otype"-> oType.toUpperCase()), con_jsonObj, GetLastError(), upsert = false, multi = false)
-        	JsonResponse(Created(SUC_COMMON_OK))
-          }else{
-            JsonResponse(BadRequest(toUserError(errorList)));
-          }
+      errors => {
+        JsonResponse(BadRequest(JSON_KEYWORD_ERRORS("Unexpected Request, what have you sent?")));
+      },
+      profile => {
+        val errorList = validateInput(profile)
+        if(errorList.isEmpty){
+
+          val userId = request.session(USER_ID)
+          val oType = request.session(OTYPE)
+          val jsonObj = Json.toJson(profile)
+
+          val ins_jsonObj = jsonObj.as[JsObject] + ("_id" -> JsString( userIDCombination(oType , userId) ))
+          val con_jsonObj = Json.obj( "$set" -> Json.obj( "newUser" -> JsBoolean(false)))
+          Logger.info("USER_ID: "+userIDCombination(oType , userId))
+          profileCollection.insert(ins_jsonObj)
+          userCollection.update(Json.obj("id"->userId , "otype"-> oType.toUpperCase()), con_jsonObj, GetLastError(), upsert = false, multi = false)
+          JsonResponse(Created(SUC_COMMON_OK))
+        }else{
+          JsonResponse(BadRequest(toUserError(errorList)));
         }
-      )
+      }
+    )
   }
   
   /**
@@ -325,26 +325,26 @@ object UserController extends BaseApiController {
     val userProfile = request.body.validate[UserProfile];
     
     userProfile.fold(
-        errors => {
-          JsonResponse(BadRequest(Json.obj("error"->"Unexpected Request, what have you sent?")));
-        },
-        userProfile => {
-          val errorList = validateInput(userProfile)
-          if(errorList.isEmpty){
-            
-            val userId = request.session(USER_ID)
-            val oType = request.session(OTYPE)
-            val jsonObj = Json.toJson(userProfile)
-            
-            val userAuthId = Json.obj("_id" -> JsString( userIDCombination(oType , userId) ))
-            
-            profileCollection.update(userAuthId, jsonObj, GetLastError(), upsert = false, multi = false)
-        	  JsonResponse(Created(SUC_COMMON_OK))
-          }else{
-            JsonResponse(BadRequest(toUserError(errorList)));
-          }
+      errors => {
+        JsonResponse(BadRequest(Json.obj("error"->"Unexpected Request, what have you sent?")));
+      },
+      userProfile => {
+        val errorList = validateInput(userProfile)
+        if(errorList.isEmpty){
+
+          val userId = request.session(USER_ID)
+          val oType = request.session(OTYPE)
+          val jsonObj = Json.toJson(userProfile)
+
+          val userAuthId = Json.obj("_id" -> JsString( userIDCombination(oType , userId) ))
+
+          profileCollection.update(userAuthId, jsonObj, GetLastError(), upsert = false, multi = false)
+          JsonResponse(Created(SUC_COMMON_OK))
+        }else{
+          JsonResponse(BadRequest(toUserError(errorList)));
         }
-      )
+      }
+    )
   }
 
   /**
@@ -436,9 +436,9 @@ object UserController extends BaseApiController {
 
       case 2 => { //user with new access
         val _type="F"
-        val _cpId = Option.empty
-        val _accessLvl = AUTH_DEFAULT_LVL
-        val _newUser = true
+        val _cpId = Option("5512f9dd2c41254c05e11dcb")
+        val _accessLvl = AUTH_DEFAULT_LVL + AUTH_CAL_CREATE_LVL
+        val _newUser = false
         val _name = "Facebook Test"
         runMe(_userid, _name, _type, _accessLvl, _cpId, _newUser)
       }

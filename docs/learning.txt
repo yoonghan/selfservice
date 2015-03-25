@@ -24,3 +24,5 @@ MongoDB database, object that have _id cannot be used with $set. E.g. db.collect
 Never make any packages with "play" name. NEVER!
 
 Do not make the naming "id" to the model, id and _id is confusing and makes the program hard to decode, name it to aid
+
+MongoDB Id have to be in Hexa 24 digits(a time). So a checking of hexa value and 24 digit lenght is needed before query, else the response will throw exception.
