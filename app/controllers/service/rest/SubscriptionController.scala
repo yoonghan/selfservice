@@ -45,7 +45,7 @@ object SubscriptionController extends BaseApiController {
 
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
-    val query = Json.obj("del" -> false)
+    val query = Json.obj("status" -> STATUS_ACTIVE)
     val userAuth = userIDCombination(oType, userId)
 
 	/**HALTED - This is only working in Mongo 2.6 onwards**/
@@ -83,7 +83,7 @@ object SubscriptionController extends BaseApiController {
 //    }
     /**HALTED - This is only working in Mongo 2.6 onwards**/
 	/**REPLACEMENT until Mongo 2.6 works[S]**/
-    val cursor: Cursor[SubscriptionHost] = subscriptionCollection.find(Json.obj()).cursor[SubscriptionHost]
+    val cursor: Cursor[SubscriptionHost] = subscriptionCollection.find(query).cursor[SubscriptionHost]
 
     val futureSubscriptionReg: Future[List[SubscriptionHost]] = cursor.collect[List]()
 
@@ -443,7 +443,7 @@ object SubscriptionController extends BaseApiController {
     request => {
       val cpId = request.session(CP_ID)
       val query = Json.obj("_id"->Json.obj("$oid"->cpId), "ext"-> Json.obj("$exists" -> true))
-      val cursor: Cursor[SubscriptionImg] = subscriptionCollection.find(Json.obj()).cursor[SubscriptionImg]
+      val cursor: Cursor[SubscriptionImg] = subscriptionCollection.find(query).cursor[SubscriptionImg]
 
       val futureCpImg: Future[List[SubscriptionImg]] = cursor.collect[List]()
 

@@ -149,7 +149,6 @@ object UserController extends BaseApiController {
       userList.size match{
           case 1 =>{
             val encrypt_id = hashCodeUserLogin(oType=oType, userList(0)._id)
-
             JsonResponse(ImageResponse(".gif",Utility.getImageURL(encrypt_id, width=width, height=height)))
           }
           case _ =>
@@ -477,6 +476,16 @@ object UserController extends BaseApiController {
           profileCollection.insert(opt)
         }
         Ok("Done")
+      }
+
+      case 5=>{
+        val _userid = "10152559145073139"
+        val _name = "Han Yoong"
+        val _type = "F"
+        val _accessLvl = AUTH_DEFAULT_LVL
+        val _cpId = Option.empty
+        val _newUser = true
+        runMe(_userid, _name, _type, _accessLvl, _cpId, _newUser)
       }
     }
   }

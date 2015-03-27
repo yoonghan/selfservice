@@ -40,4 +40,7 @@ object CommonKeys{
 	val EMAIL_VALIDATOR_TYPE='V';
 
   val MONGODB_HEX_ID_PATTERN = """[0-9|a-f]{24}""";
+
+  val STATUS_ACTIVE = 1;
+  val STATUS_DELETE = 2;
 }
