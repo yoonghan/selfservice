@@ -194,7 +194,7 @@ class BGReportCreator extends Actor{
 	    value match {
 	      case str:String => cell.setCellValue(str)
 	      case int:Int => cell.setCellValue(int)
-        case opt:Option[_] => cell.setCellValue(if(opt.isEmpty)"" else opt.toString)
+	      case opt:Option[_] => cell.setCellValue(if(opt.isEmpty)"" else opt.get.toString)
 	      case any => cell.setCellValue(any.toString)
 	    }
     	
