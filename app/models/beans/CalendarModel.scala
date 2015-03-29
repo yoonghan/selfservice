@@ -1,6 +1,7 @@
 package models.beans
 
 import utils.CommonKeys._
+import utils.ConfigurationSetup._
 import play.api.libs.json._
 import reactivemongo.bson._
 import play.api.data.Forms.{mapping, longNumber, nonEmptyText, text, optional, boolean, list, number}
@@ -11,6 +12,8 @@ import play.api.Logger
 import models.beans.UserModel.UserStorageModel
 import com.wordnik.swagger.annotations.{ApiModel,ApiModelProperty}
 import scala.annotation.meta.field
+import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
 
 object CalendarModel {
   
@@ -103,15 +106,15 @@ object CalendarModel {
   .verifying("Specific occurrence must not have empty dates",
       fields => fields match {
         case reserveData => {((reserveData.reserveType == EVENT_TYPE && reserveData.reserveEvents.size == 0) || 
-        					(reserveData.reserveType == OCCURRENCE_TYPE && !reserveData.occurrence(0) && !reserveData.occurrence(1)  && !reserveData.occurrence(2) && !reserveData.occurrence(3) && !reserveData.occurrence(4) && !reserveData.occurrence(5) && !reserveData.occurrence(6))) == false;}
+          (reserveData.reserveType == OCCURRENCE_TYPE && !reserveData.occurrence(0) && !reserveData.occurrence(1)  && !reserveData.occurrence(2) && !reserveData.occurrence(3) && !reserveData.occurrence(4) && !reserveData.occurrence(5) && !reserveData.occurrence(6))) == false;}
       })
   .verifying("Some of the time set are invalid. Check end time against start time",
       fields => fields match {
         case reserveData =>
           if(reserveData.fullDay == false){
-        	  val findInvalid = reserveData.timedEvents.filter( rec => (rec.stime >= rec.etime) ); findInvalid.size == 0;
+        	  val findInvalid = reserveData.timedEvents.filter( rec => (rec.stime >= rec.etime) ); findInvalid.size == 0
           }else{
-            true;
+            true
           }
       })
   .verifying("Maximum number of blackout dates(50), occurrences(50) and time(16) permitted allowed",
@@ -123,6 +126,28 @@ object CalendarModel {
           )==false
         }
       })
+  .verifying("Scheduling a date for today is not allowed",
+    fields => fields match {
+      case reserveData => {
+        if(reserveData.reserveType == EVENT_TYPE){
+          val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(MIN_BOOKING_HR)
+          reserveData.reserveEvents.filter(dates => dates < currDate.getMillis()).size == 0
+        }else{
+          true
+        }
+      }
+    })
+  .verifying("You have blackout all the events!",
+    fields => fields match {
+      case reserveData => {
+        if(reserveData.reserveType == EVENT_TYPE){
+          val remainingList = reserveData.reserveEvents.dropWhile(eventDate => reserveData.blackoutEvents.contains(eventDate))
+          if(remainingList.size > 0) true else false
+        }else{
+          true
+        }
+      }
+    })
       
   def matchField(field:String):String = {
      field match {
@@ -220,7 +245,7 @@ object CalendarModel {
       "timedEvents["+l+"].abookings" -> String.valueOf(reservationSetup.timedEvents(l).abookings)
     }
     val map = Map(
-        "title" -> reservationSetup.title,
+      "title" -> reservationSetup.title,
     	"desc" -> reservationSetup.desc,
     	"userInfo" -> reservationSetup.userInfo.toString,
     	"fullDay" -> String.valueOf(reservationSetup.fullDay),

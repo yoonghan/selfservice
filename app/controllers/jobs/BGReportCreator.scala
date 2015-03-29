@@ -27,6 +27,7 @@ import reactivemongo.api.Cursor
 import controllers.jobs.LogActor._
 import models.beans.EnumTableList._
 import models.beans.UserModel._
+import models.beans.SubscriptionModel._
 import play.api.libs.Files._
 import java.io.File
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -53,6 +54,7 @@ object ReportCreator {
 class BGReportCreator extends Actor{
   
   val eventHeader = Array("Status", "First Name", "Last Name", "Email", "Contact No", "Address", "PostCode", "State")
+  val corporateHeader = Array("Name", "Description", "Website", "Contact No", "Email")
   val eventListHeader = Array("Title", "Description", "Start Date Time", "End Date Time", "Availability Left", "Reserve Count")
   val eventGap = 6 //This is for the event to ensure that a gap is left
   
@@ -69,8 +71,10 @@ class BGReportCreator extends Actor{
 	/**
 	 * Generate the excel.
 	 */
-	def genExcel(corporateId:String){val calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
+	def genExcel(corporateId:String){
+    val calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
 	  val profileCollection: JSONCollection = db.collection[JSONCollection](PROFILE.toString())
+    val subscriptionCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
 	  
 	  /**
 	   * Get the list of events per corporate.
@@ -90,7 +94,7 @@ class BGReportCreator extends Actor{
 	   * Process User details per Event.
 	   */
 	  def processUserPerEvent(regModel:List[UserStorageModel], pendModel:List[UserStorageModel],
-	      calRegUser:CalendarRegisteredUser, startGap:Int, eventSheet:XSSFSheet, workbook:XSSFWorkbook):Future[List[UserProfileWithId]] = {
+	    calRegUser:CalendarRegisteredUser, startGap:Int, eventSheet:XSSFSheet, workbook:XSSFWorkbook):Future[List[UserProfileWithId]] = {
 	    
 	    val regMap = regModel.map(t => t.id -> t).toMap
 	    val pendMap = pendModel.map(t => t.id -> t).toMap
@@ -120,7 +124,7 @@ class BGReportCreator extends Actor{
 	   * Create a temporary workbook
 	   */
 	  def prepareExcel() = {
-		new XSSFWorkbook
+      new XSSFWorkbook
 	  }
 	  
 	  /**
@@ -160,15 +164,19 @@ class BGReportCreator extends Actor{
 	      }
 	    }
 	    
-	    val query = Json.obj("_id"->corporateId);
-	    val updateRec = reportCollection.remove(query, GetLastError(), false)
-		updateRec.map{
-          result => {
-            if(result.updated == 0)
-            	Logger.error("Nothing to be deleted");
-          }
+	    removeFromDB();
+    }
+
+    def removeFromDB(){
+      val query = Json.obj("_id"->corporateId);
+      val updateRec = reportCollection.remove(query, GetLastError(), false)
+      updateRec.map{
+        result => {
+          if(result.updated == 0)
+            Logger.error("Nothing to be deleted");
         }
-	  }
+      }
+    }
 
 	  /**
 	   * Create excel sheet.
@@ -186,6 +194,7 @@ class BGReportCreator extends Actor{
 	    value match {
 	      case str:String => cell.setCellValue(str)
 	      case int:Int => cell.setCellValue(int)
+        case opt:Option[_] => cell.setCellValue(if(opt.isEmpty)"" else opt.toString)
 	      case any => cell.setCellValue(any.toString)
 	    }
     	
@@ -206,12 +215,12 @@ class BGReportCreator extends Actor{
 	    writeCell(firstName , 1, row)
 	    writeCell(lastName  , 2, row)
 	    
-	    writeCell(userModel.email.getOrElse("")   , 3, row)
-	    writeCell(userModel.ctcNo.getOrElse("")   , 4, row)
+	    writeCell(userModel.email   , 3, row)
+	    writeCell(userModel.ctcNo   , 4, row)
 	    
-	    writeCell(userModel.addr.getOrElse("")  , 5, row)
-	    writeCell(userModel.pstCd.getOrElse("")  , 6, row)
-	    writeCell(userModel.state.getOrElse("")   , 7, row)
+	    writeCell(userModel.addr  , 5, row)
+	    writeCell(userModel.pstCd  , 6, row)
+	    writeCell(userModel.state   , 7, row)
 	    	 
 	  }
 	  
@@ -236,6 +245,17 @@ class BGReportCreator extends Actor{
 		    writeCell(eventListHeader(cnt), cnt.toShort, row)
 	    }
 	  }
+
+    /**
+     * Create Corporate header
+     */
+    def createCorporateHeader(currRow:Int, sheet:XSSFSheet){
+      val row = createRow(sheet)(currRow)
+
+      for(cnt <- 0 until corporateHeader.length){
+        writeCell(corporateHeader(cnt), cnt.toShort, row)
+      }
+    }
 	  
 	  /**
 	   * Write event
@@ -271,12 +291,29 @@ class BGReportCreator extends Actor{
 		  writeCell(DATETIME_FORMAT.format(event.end), 1, row5)
 	    }
 	  }
+
+    /**
+     * Write Corporate Info
+     */
+    def writeCorporateInfo(currRow:Int, sub:Subscription, sheet:XSSFSheet){
+      val rowCreator = createRow(sheet) _
+
+      //firstCol
+      val row1 = rowCreator(currRow)
+      writeCell(sub.cName,  0, row1)
+      writeCell(sub.cDesc,  2, row1)
+      writeCell(sub.cWebsite,  2, row1)
+      writeCell(sub.cCtcNo,  3, row1)
+      writeCell(sub.cEmail,  4, row1)
+
+
+    }
 	  
 	  /**
 	   * Write event
 	   */
 	  def writeListEvent(currRow:Int, row:Int, event:CalendarRegisteredUser, sheet:XSSFSheet){
-		  val rowCreator = createRow(sheet)(currRow * (row + 1))
+		  val rowCreator = createRow(sheet)(currRow + (row + 1))
 		  writeCell(event.title , 0, rowCreator)
 		  writeCell(event.desc  , 1, rowCreator)
 		  if(event.allDay){
@@ -295,26 +332,23 @@ class BGReportCreator extends Actor{
 	  /**
 	   * Process all the events and every user.
 	   */
-	  def processEventList(eventList:List[CalendarRegisteredUser]){
-	    val workbook = prepareExcel()
-	    val mainSheet = createSheet(workbook, "Events")
+	  def processEventList(eventList:List[CalendarRegisteredUser], workbook:XSSFWorkbook, mainSheet:XSSFSheet){
 	    val futureList:List[Future[List[UserProfile]]] = Nil
-	    
+
+      createEventListHeader(3, mainSheet)
 	    val concurrList = for(eventCnt <- 0 until eventList.size) yield{
 	      val event = eventList(eventCnt)
-	      
-	      createEventListHeader(0, mainSheet)
-	      writeListEvent(1, eventCnt, event, mainSheet)
+	      writeListEvent(3, eventCnt, event, mainSheet)
 	      val listRegUserId = if(event.reg.isDefined && event.reg.get.size > 0 || event.pend.isDefined && event.pend.get.size > 0){
-		        val eventSheet = createSheet(workbook, event.title + "_" + DATE_FORMAT.format(event.start ))
-		        writeEvent(0, eventCnt, event, eventSheet)
+          val eventSheet = createSheet(workbook, event.title + "_" + DATE_FORMAT.format(event.start ))
+		      writeEvent(0, eventCnt, event, eventSheet)
 			    createEventHeader(eventGap, eventSheet)
 			    (processUserPerEvent(event.reg.getOrElse(Nil), event.pend.getOrElse(Nil), event, eventGap+1, eventSheet, workbook))
 		      }else{
 		        Future(Nil)
 		      }
 	      listRegUserId
-		}
+      }
 	    
 	    if(eventList.length > 0){
 		    val toWait = Future.sequence(concurrList.toList)
@@ -331,15 +365,49 @@ class BGReportCreator extends Actor{
 	        message)
 	    }
 	  }
-	  
-	  val events = getListOfEvents()
-	  events.onComplete{
-    	  case Success(eventList) => processEventList(eventList);
-    	  case Failure(failure) =>{
-    	    failure.printStackTrace();
-    	    logActor ! ("Coorporate Id: "+corporateId+", failure: "+failure.getMessage())
-    	  }
-    	}
+
+    def generateCoorporateInfo(): Future[List[Subscription]] ={
+      val query = Json.obj(
+        "_id" -> Json.obj("$oid" -> corporateId)
+      )
+
+      val cursor:Cursor[Subscription] = subscriptionCollection.find(query).cursor[Subscription]
+
+      val futureSubList: Future[List[Subscription]] = cursor.collect[List]()
+      futureSubList
+    }
+
+    def processCorporateInfo(sub: Subscription, mainSheet:XSSFSheet):Unit = {
+      try {
+        createCorporateHeader(0, mainSheet)
+        writeCorporateInfo(1, sub, mainSheet)
+      }catch{
+        case e:Exception => e.printStackTrace();
+      }
+    }
+
+    val cpInfoList = generateCoorporateInfo();
+    cpInfoList.map { infoList =>
+      infoList.size match{
+        case 1 => {
+          val workbook = prepareExcel()
+          val mainSheet = createSheet(workbook, "Events")
+          processCorporateInfo(infoList(0), mainSheet)
+          val events = getListOfEvents()
+          events.onComplete {
+            case Success(eventList) => processEventList(eventList, workbook, mainSheet);
+            case Failure(failure) => {
+              removeFromDB();
+              failure.printStackTrace();
+              logActor ! ("Coorporate Id: " + corporateId + ", failure: " + failure.getMessage())
+            }
+          }
+        }case _ =>{
+          removeFromDB();
+          Logger.info("There are no reports to be created for:"+corporateId);
+        }
+      }
+    }
 	}
   
 	/**

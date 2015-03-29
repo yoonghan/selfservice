@@ -273,12 +273,11 @@ object CalendarController extends BaseApiController with MongoController{
           val errorList = validateSetupInput(setup)
           if(errorList.isEmpty){
             val writeObj = reservationSetupRW.writes(setup);
-
             val insRec = resCollection.insert((Json.obj( "userId" -> userId))  ++ writeObj.as[JsObject])
             insRec.map{
                 result =>
                 if(result.ok){
-                    CalendarCreator.createCalendar(setup, userId);                
+                  CalendarCreator.createCalendar(setup, userId);
                 	JsonResponse(Created(Json.obj("success"->"OK")))
                 }else
                 	JsonResponse(Created(Json.obj("error"->"FAIL")))
