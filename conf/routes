@@ -38,8 +38,6 @@ GET     /user/accesses						controllers.service.rest.UserController.accesses
 GET     /user/profile						controllers.service.rest.UserController.profile
 PUT     /user/profile						controllers.service.rest.UserController.profileIns
 POST    /user/profile						controllers.service.rest.UserController.profileUpd
-GET		/user/testprofile   				controllers.service.rest.UserController.testprofile(code:Int = 1)
-GET		/user/testprofile/:code				controllers.service.rest.UserController.testprofile(code:Int)
 GET     /user/registrationno                controllers.service.rest.UserController.getRegistrationNo
 
 #Admin service
@@ -74,8 +72,8 @@ GET		/tools/calendarconf/:from/:to		controllers.service.cal.CalendarController.c
 POST	/tools/calendarconf					controllers.service.cal.CalendarController.copySetup
 DELETE	/tools/calendarconf					controllers.service.cal.CalendarController.deleteSetup
 GET		/tools/calendarload					controllers.service.cal.CalendarController.reservationProgress
-GET		/tools/reservationlist				controllers.service.cal.CalendarController.reservationList
-GET		/tools/usersinreservation/:id		controllers.service.cal.CalendarController.usersInReservations(id:String)
+GET		/tools/reservationlists				controllers.service.cal.CalendarController.reservationList
+GET		/tools/reservationlist/:id/users	controllers.service.cal.CalendarController.usersInReservations(id:String)
 DELETE	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_unreserve
 POST	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_reserve
 
@@ -97,6 +95,11 @@ GET		/rest/image/intro					controllers.service.rest.ImageController.findAllIntro
 # Utilities
 POST	/tools/upload						controllers.service.html.Upload.upload
 GET		/tools/upload						controllers.service.html.Upload.uploadGet
+
+# Test services
+GET		/test/testprofile   				controllers.service.test.TestHelper.testprofile(code:Int = 1)
+GET		/test/testprofile/:code				controllers.service.test.TestHelper.testprofile(code:Int)
+GET		/test/prepareSetting    			controllers.service.test.TestHelper.prepareSettingEnv
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file						controllers.Assets.at(path="/public", file)

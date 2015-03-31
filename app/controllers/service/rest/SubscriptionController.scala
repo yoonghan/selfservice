@@ -220,28 +220,28 @@ object SubscriptionController extends BaseApiController {
 
         val bsonId = BSONObjectID.generate.stringify
         val createSub = Subscription_Creation(bsonId, sub.cName , sub.cDesc , sub.cWebsite ,sub.cCtcNo,sub.cEmail , List(userAuth), userAuth, 2, 0)
-	    val futureInsSubscription = subscriptionCollection.insert(createSub)
-	    futureInsSubscription.flatMap(
-	        status => {
-	          if(status.ok){
-	            val query = Json.obj("id" -> userId, "otype" -> oType)
-	            val updateVal = Json.obj("$set"->Json.obj("cpId" -> bsonId,"authLevel" -> ( AUTH_CAL_CREATE_LVL | authLvl )))
-	            val futureUpdateUser = userCollection.update(query, updateVal, GetLastError(), false, false)
-	            futureUpdateUser.map{
-	              status =>
-	              if(status.updated == 1){
-	                val query = Json.obj("_id" -> Json.obj("$oid" -> bsonId))
-	                val updateSub = Json.obj("$set"->Json.obj("status" -> 1))
-	                subscriptionCollection.update(query, updateSub, GetLastError(), false, false)
-	                true
-	              }else{
-	                false
-	              }
-	            }
-	          }else
-	            Future.successful(false)
-	        }
-	    )
+        val futureInsSubscription = subscriptionCollection.insert(createSub)
+        futureInsSubscription.flatMap(
+            status => {
+              if(status.ok){
+                val query = Json.obj("id" -> userId, "otype" -> oType)
+                val updateVal = Json.obj("$set"->Json.obj("cpId" -> bsonId,"authLevel" -> ( AUTH_CAL_CREATE_LVL | authLvl )))
+                val futureUpdateUser = userCollection.update(query, updateVal, GetLastError(), false, false)
+                futureUpdateUser.map{
+                  status =>
+                  if(status.updated == 1){
+                    val query = Json.obj("_id" -> Json.obj("$oid" -> bsonId))
+                    val updateSub = Json.obj("$set"->Json.obj("status" -> 1))
+                    subscriptionCollection.update(query, updateSub, GetLastError(), false, false)
+                    true
+                  }else{
+                    false
+                  }
+                }
+              }else
+                Future.successful(false)
+            }
+        )
       }else{
         Future.successful(false)
       }
