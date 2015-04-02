@@ -2,31 +2,21 @@ package controllers.jobs
 
 import akka.actor._
 import play.api.libs.json._
-import models.auth.OAuth2Authentication
-import models.auth.OAuth2Authentication._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import scala.concurrent.Future
 import play.libs.Akka
 import akka.util.Timeout
-import scala.util.Try
 import akka.pattern.ask
 import scala.concurrent.duration._
 import models.beans.CalendarModel._
-import reactivemongo.api.MongoDriver
 import io.lamma._
 import org.joda.time.DateTime
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.Logger
-import scala.concurrent.Await
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Play.current
-import reactivemongo.api.collections.default.BSONCollection
 import scala.util.Success
 import scala.util.Failure
 import org.joda.time.DateTimeZone
 import play.api.libs.iteratee.Enumerator
 import utils.ConfigurationSetup
-import reactivemongo.api.Cursor
 import models.beans.EnumTableList._
 import controllers.jobs.LogActor._
 
@@ -50,8 +40,12 @@ object CalendarCreator{
   }
 }
 
-class BGCalendarCreator extends Actor{
-  
+class BGCalendarCreator extends Actor with MongoJob{
+
+  def tmpCalCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
+  def calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
+  def subCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString());
+
 	def testOccurrence(rs:ReservationSetup, userId:String){
 	    val returnList = createListOfOccurrences(rs.reserveType, rs.occurrence, rs.reserveEvents )
 	    returnList.foreach(f=>println("-->"+new DateTime(f)))
@@ -166,9 +160,6 @@ class BGCalendarCreator extends Actor{
 	}
 	
 	private def insertToDatabase(data:IndexedSeq[TempCalendar], userId:String){
-	    val db = ReactiveMongoPlugin.db
-	    val tmpCalCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
-  
 	    val SIZE = 50
 	    
 	    def listingSplitAndInsert(finishing:IndexedSeq[TempCalendar]){
@@ -192,11 +183,9 @@ class BGCalendarCreator extends Actor{
 	}
 	
 	private def removeFromDatabase(userId:String){
-	    val db = ReactiveMongoPlugin.db
-	    val calTempCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
-	    import reactivemongo.core.commands.GetLastError
-	    val query = Json.obj("userId"->userId);
-		val updateRec = calTempCollection.remove(query, GetLastError(), false)
+    import reactivemongo.core.commands.GetLastError
+    val query = Json.obj("userId"->userId);
+		val updateRec = tmpCalCollection.remove(query, GetLastError(), false)
 //		updateRec.map{
 //          result => {
 //            if(result.updated == 0)
@@ -226,14 +215,6 @@ class BGCalendarCreator extends Actor{
 	  }
 //Publishing Case
 	  case CopyCalendar(rs, cpId, userId) =>{
-		//insert into database.
-	    val db = ReactiveMongoPlugin.db
-	    val calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
-	    val calTempCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_TEMP.toString())
-	    val subCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString());
-	    
-	    import models.beans.SubscriptionModel._
-	    
 	    for(each <- rs){
 	      if(each.virtualDel == false){
 	      val cal = new CalendarWithoutId(each.title , each.start , each.end , each.allDay , each.desc , each.userInfo, each.avail, each.conf, each.userId, cpId )
@@ -250,7 +231,7 @@ class BGCalendarCreator extends Actor{
 	    
 	    import reactivemongo.core.commands.GetLastError
 	    val query = Json.obj("userId"->userId);
-		val updateRec = calTempCollection.remove(query, GetLastError(), false)
+		val updateRec = tmpCalCollection.remove(query, GetLastError(), false)
 		updateRec.map{
           result => {
             if(result.updated == 0)

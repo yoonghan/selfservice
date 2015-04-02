@@ -25,7 +25,7 @@ object Upload extends BaseApiController with FlowHelper {
   }
 
   private def sizeExceeded(size: MaxSizeExceeded) = {
-    BadRequest("File size exceeded")
+    JsonResponse(BadRequest("File size exceeded"))
   }
 
   private def sizeAccepted(multipart: MultipartFormData[TemporaryFile])(implicit request: RequestHeader) = {
@@ -35,10 +35,10 @@ object Upload extends BaseApiController with FlowHelper {
         case Some("image/jpeg") | Some("image/png") =>
           val is = new FileInputStream(picture.ref.file)
           dealWithFile(is, multipart)
-        case _ => BadRequest("invalid content type")
+        case _ => JsonResponse(BadRequest("invalid content type"))
       }
     }.getOrElse {
-      BadRequest("Missing file")
+      JsonResponse(BadRequest("Missing file"))
     }
   }
 
@@ -55,10 +55,10 @@ object Upload extends BaseApiController with FlowHelper {
     info.uploadedChunks += flowChunkNumber
     if (info.checkIfUploadFinished) {
       FlowInfoStorage.remove(info)
-      Ok("All finished.")
+      JsonResponse(Ok("All finished."))
     }
     else {
-      Ok("Upload")
+      JsonResponse(Ok("Upload"))
     }
   }
   
@@ -71,10 +71,10 @@ object Upload extends BaseApiController with FlowHelper {
       val flowChunkNumber: Int = getFlowChunkNumber(request)
       val info: FlowInfo = getFlowInfo(request, Option.apply(userAuth))
       if (info.uploadedChunks.contains(flowChunkNumber)) {
-        Ok
+        JsonResponse(Ok)
       }
       else {
-        NotFound
+        JsonResponse(NotFound)
       }
   }
 }

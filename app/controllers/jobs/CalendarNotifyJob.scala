@@ -8,18 +8,11 @@ import scala.concurrent.duration.Duration
 import akka.actor.ActorRef
 import akka.actor.Props
 import java.util.concurrent.TimeUnit
-import com.jaring.jom.util.email.EmailUtility
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Play.current
-import reactivemongo.api.collections.default.BSONCollection
-import scala.util.Success
-import scala.util.Failure
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
-import play.api.libs.iteratee.Enumerator
 import reactivemongo.api.Cursor
 import models.beans.EnumTableList._
 import models.beans.CalendarModel.CalendarRegisteredUser
@@ -51,12 +44,11 @@ object CalendarNotifyJob {
  * 2. Check all the users that have subscribed to the notification
  * 3. Email to them
  */
-class CalendarNotifyActor extends UntypedActor {
-  val db = ReactiveMongoPlugin.db
-  val calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
-  val reminderCollection: JSONCollection = db.collection[JSONCollection](REMINDER.toString())
-  val notifCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_NOTIFY.toString())
-  val emailCollection: JSONCollection = db.collection[JSONCollection](EMAIL_NOTIFY_LIST.toString())
+class CalendarNotifyActor extends UntypedActor with MongoJob{
+  def calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
+  def reminderCollection: JSONCollection = db.collection[JSONCollection](REMINDER.toString())
+  def notifCollection: JSONCollection = db.collection[JSONCollection](CALENDAR_NOTIFY.toString())
+  def emailCollection: JSONCollection = db.collection[JSONCollection](EMAIL_NOTIFY_LIST.toString())
   
   //Depending on our period of job check in days.
   val notify_periods = Array(1,7);

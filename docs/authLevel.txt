@@ -26,6 +26,6 @@ userId = G|F<id>
 #Start from top for allow; same as from right.
 1^3-Reserved not sure what usage
 2^3-Email
-2^3-Contact
+0^3-Contact
 2^3-Addr
 ****0 off, 1 optional, 2 mandatory

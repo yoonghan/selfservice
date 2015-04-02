@@ -121,7 +121,7 @@ object CalendarController extends BaseApiController with MongoController{
   }
   
   /**
-   * Get reserved information
+   * Get pending information
    */
   @ApiOperation(
     nickname = "getPendingReservedEntry", 

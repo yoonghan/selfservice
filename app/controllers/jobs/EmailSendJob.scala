@@ -8,20 +8,11 @@ import scala.concurrent.duration.Duration
 import akka.actor.ActorRef
 import akka.actor.Props
 import java.util.concurrent.TimeUnit
-import com.jaring.jom.util.email.EmailUtility
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Play.current
-import reactivemongo.api.collections.default.BSONCollection
-import scala.util.Success
-import scala.util.Failure
-import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
-import play.api.libs.iteratee.Enumerator
 import reactivemongo.api.Cursor
-import models.beans.ReminderModel.ReminderSetting
 import models.beans.EmailNotifyModel.EmailNotify
 import models.beans.EnumTableList.EMAIL_NOTIFY_LIST
 import utils.CommonKeys.{EMAIL_REMINDER_TYPE , EMAIL_VALIDATOR_TYPE }
@@ -48,10 +39,9 @@ object EmailSendJob {
 /**
  * Send email that have been inserted into emailNotifyList
  */
-class EmailSendActor extends UntypedActor {
-  val db = ReactiveMongoPlugin.db
+class EmailSendActor extends UntypedActor with MongoJob{
   val MAX_LIMIT = 20	//max only 20 emails to be sent per cycle
-  val emailCollection: JSONCollection = db.collection[JSONCollection](EMAIL_NOTIFY_LIST.toString())
+  def emailCollection: JSONCollection = db.collection[JSONCollection](EMAIL_NOTIFY_LIST.toString())
   
   override def onReceive(msg:Any){
     val query = Json.obj()

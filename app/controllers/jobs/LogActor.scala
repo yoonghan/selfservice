@@ -7,7 +7,6 @@ import scala.concurrent.duration.Duration
 import akka.actor.ActorRef
 import akka.actor.Props
 import java.util.concurrent.TimeUnit
-import com.jaring.jom.util.email.EmailUtility
 import scala.concurrent.ExecutionContext.Implicits.global
 
  

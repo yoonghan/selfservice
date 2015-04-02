@@ -100,6 +100,7 @@ GET		/tools/upload						controllers.service.html.Upload.uploadGet
 GET		/test/testprofile   				controllers.service.test.TestHelper.testprofile(code:Int = 1)
 GET		/test/testprofile/:code				controllers.service.test.TestHelper.testprofile(code:Int)
 GET		/test/prepareSetting    			controllers.service.test.TestHelper.prepareSettingEnv
+GET		/test/prepareBooking/:conf			controllers.service.test.TestHelper.prepareBookingEnv(conf:Boolean)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file						controllers.Assets.at(path="/public", file)

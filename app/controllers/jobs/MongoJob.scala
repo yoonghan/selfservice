@@ -1,8 +1,9 @@
 package controllers.jobs
 
-/**
- * Created by yoong.han on 4/1/2015.
- */
-class MongoJob {
+import play.modules.reactivemongo.ReactiveMongoPlugin
+import play.api.Play.current
 
+trait MongoJob{
+  def db = ReactiveMongoPlugin.db
 }
+

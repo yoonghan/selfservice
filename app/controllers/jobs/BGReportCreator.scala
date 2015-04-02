@@ -2,8 +2,6 @@ package controllers.jobs
 
 import akka.actor._
 import play.api.libs.json._
-import models.auth.OAuth2Authentication
-import models.auth.OAuth2Authentication._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.concurrent.Future
 import play.libs.Akka
@@ -12,16 +10,10 @@ import scala.util.{Try, Success, Failure}
 import akka.pattern.ask
 import scala.concurrent.duration._
 import models.beans.CalendarModel._
-import reactivemongo.api.MongoDriver
-import org.joda.time.DateTime
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.Logger
 import scala.concurrent.Await
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Play.current
-import reactivemongo.api.collections.default.BSONCollection
 import org.joda.time.DateTimeZone
-import play.api.libs.iteratee.Enumerator
 import utils.ConfigurationSetup
 import reactivemongo.api.Cursor
 import controllers.jobs.LogActor._
@@ -37,7 +29,6 @@ import org.apache.poi.ss.util.WorkbookUtil
 import org.apache.poi.xssf.usermodel.{XSSFSheet,XSSFCell,XSSFRow}
 import models.beans.ReportModel.{ReportNotify,ReportNotifyWithoutId}
 import reactivemongo.core.commands.GetLastError
-import com.jaring.jom.util.email.EmailUtility
 
 object ReportCreator {
 	private val reportSingleCall: ActorRef = Akka.system().actorOf(Props[BGReportCreator], name="BGReportCreator")
@@ -51,15 +42,17 @@ object ReportCreator {
 	}
 }
 
-class BGReportCreator extends Actor{
+class BGReportCreator extends Actor with MongoJob{
   
   val eventHeader = Array("Status", "First Name", "Last Name", "Email", "Contact No", "Address", "PostCode", "State")
   val corporateHeader = Array("Name", "Description", "Website", "Contact No", "Email")
   val eventListHeader = Array("Title", "Description", "Start Date Time", "End Date Time", "Availability Left", "Reserve Count")
   val eventGap = 6 //This is for the event to ensure that a gap is left
   
-  val db = ReactiveMongoPlugin.db
-  val reportCollection: JSONCollection = db.collection[JSONCollection](REPORT_NOTIFY_LIST.toString())
+  def reportCollection: JSONCollection = db.collection[JSONCollection](REPORT_NOTIFY_LIST.toString())
+  def calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
+  def profileCollection: JSONCollection = db.collection[JSONCollection](PROFILE.toString())
+  def subscriptionCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
   
   /**
    * Print all system data, for future troubleshooting.
@@ -72,10 +65,6 @@ class BGReportCreator extends Actor{
 	 * Generate the excel.
 	 */
 	def genExcel(corporateId:String){
-    val calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
-	  val profileCollection: JSONCollection = db.collection[JSONCollection](PROFILE.toString())
-    val subscriptionCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
-	  
 	  /**
 	   * Get the list of events per corporate.
 	   */
