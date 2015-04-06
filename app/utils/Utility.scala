@@ -30,7 +30,6 @@ object Utility {
   def getImageURL(text:String, width:String, height:String):Array[Byte] ={
     try{
       val rplUrl = ConfigurationSetup.IMAGE_GENERATOR.replace("""{width}""",width).replace("""{height}""",height).replace("""{text}""",text)
-      Logger.info("The url:"+rplUrl)
       val source = scala.io.Source.fromURL(rplUrl)(scala.io.Codec.ISO8859)
       val byteArray = source.map(_.toByte).toArray
       source.close()

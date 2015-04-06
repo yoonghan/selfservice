@@ -449,10 +449,9 @@ object SubscriptionController extends BaseApiController {
 
       futureCpImg.map { cpImg =>
 	      cpImg.size match {
-	        case 0 => JsonResponse(NotFound(Json.obj()))
+	        case 0 => ImageResponse(".gif", Utility.getImageURL("no+image","100","100"))
 	        case _ => {
 	          val ext = cpImg(0).ext.get
-
 	          ImageResponse(ext, Utility.getImage(cpId+ext))
 	        }
 	      }
