@@ -62,7 +62,7 @@ class AuthActor extends Actor{
 		  throw new IllegalAccessException("No such authorization")
 		}
 	  }else{
-	    throw new IllegalAccessException("invalid token")
+	    throw new IllegalAccessException("Invalid token")
 	  }
 	}
   

@@ -125,7 +125,7 @@ object AuthController extends BaseApiController with MongoController{
         		}
 	        )
 	      }
-	      case Failure(e) => Future.successful(Unauthorized("Failed to connect:-"+e.getMessage()))
+	      case Failure(e) => Future.successful(InternalServerError(views.html.help("Rejection from Social Website.")))
 	    }
 	}else{
 	    //Apparently, This error only happens in facebook.
