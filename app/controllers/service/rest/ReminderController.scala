@@ -93,6 +93,7 @@ object ReminderController extends BaseApiController {
               userAuthId
             }
         
+
             val upd_jsonObj = Json.toJson(reminderProfile)
             val upd_query = upd_jsonObj.as[JsObject]
             
@@ -113,7 +114,7 @@ object ReminderController extends BaseApiController {
 	          	  }
 	          }
 	        }
-        	JsonResponse(Created(Json.obj("success"->"OK")))
+        	  JsonResponse(Created(SUC_COMMON_OK))
           }else{
             JsonResponse(BadRequest(toReminderSettingError(errorList)));
           }
@@ -147,10 +148,10 @@ object ReminderController extends BaseApiController {
         case 1 => {
           val insDate = getDate.toString(dateFormat)
           createEmail(userCombination, reminderList(0).email , reminderList(0).key , insDate)
-          JsonResponse(Ok(Json.obj("success" -> "ok")))
+          JsonResponse(NoContent)
         }
         case _ => {
-          JsonResponse(Ok(Json.obj("error" -> "Record not found")))
+          JsonResponse(NotFound(ERR_COMMON_NO_RECORD_FOUND))
         }
       }
     }
@@ -213,7 +214,7 @@ object ReminderController extends BaseApiController {
 	
     futureReminderList.map { reminderList =>
       reminderList.size match {
-        case 0 => JsonResponse(Ok(Json.obj("success" -> "ok")))
+        case 0 => JsonResponse(NoContent)
         case _ => {
           JsonResponse(Ok(Json.toJson(reminderList(0))))
         }

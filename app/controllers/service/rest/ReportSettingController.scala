@@ -25,7 +25,7 @@ import controllers.jobs.ReportCreator
 
 @Api(value = "/reportsetting", description = "Report Setting")
 object ReportSettingController extends BaseApiController {
-	def reminderCollection: JSONCollection = db.collection[JSONCollection](REPORT_SETTING.toString())
+	def reportCollection: JSONCollection = db.collection[JSONCollection](REPORT_SETTING.toString())
 	
   /**
    * Insert or update reminder profile
@@ -49,7 +49,7 @@ object ReportSettingController extends BaseApiController {
     
     _reportSetting.fold(
         errors => {
-          JsonResponse(BadRequest(Json.obj("error"->"Unexpected Request, what have you sent?")));
+          JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT));
         },
         reportSetting => {
           val errorList = validateInput(reportSetting)
@@ -61,9 +61,9 @@ object ReportSettingController extends BaseApiController {
             val modifier = Json.obj("modifier" -> userIDCombination(oType , userId))
             
             val upd_jsonObj = jsonObj.as[JsObject] ++ id ++ modifier
-            
-            reminderCollection.update(id, upd_jsonObj, GetLastError(), upsert = true, multi = false)
-        	JsonResponse(Created(Json.obj("success"->"OK")))
+
+            reportCollection.update(id, upd_jsonObj, GetLastError(), upsert = true, multi = false)
+        	  JsonResponse(Created(SUC_COMMON_OK))
           }else{
             JsonResponse(BadRequest(toReportSettingError(errorList)));
           }
@@ -88,12 +88,12 @@ object ReportSettingController extends BaseApiController {
     val cp_id = request.session(CP_ID)
 	val query = Json.obj("_id" -> cp_id);
 
-	val cursor:Cursor[ReportSetting] = reminderCollection.find(query).cursor[ReportSetting]
+	val cursor:Cursor[ReportSetting] = reportCollection.find(query).cursor[ReportSetting]
 	val futureReportList: Future[List[ReportSetting]] = cursor.collect[List]()
 	
     futureReportList.map { reportList =>
       reportList.size match {
-        case 0 => JsonResponse(Ok(Json.obj("success" -> "ok")))
+        case 0 => JsonResponse(NoContent)
         case _ => JsonResponse(Ok(Json.toJson(reportList(0))))
       }
     }
@@ -113,15 +113,15 @@ object ReportSettingController extends BaseApiController {
   def isAllow = AuthorizeAsyncUser(BodyParsers.parse.anyContent, AUTH_CAL_CREATE_LVL){request =>    
 
     val cp_id = request.session(CP_ID)
-	val query = Json.obj("_id" -> cp_id);
+    val query = Json.obj("_id" -> cp_id);
 
-	val cursor:Cursor[ReportSetting] = reminderCollection.find(query).cursor[ReportSetting]
-	val futureReportList: Future[List[ReportSetting]] = cursor.collect[List]()
-	
+    val cursor:Cursor[ReportSetting] = reportCollection.find(query).cursor[ReportSetting]
+    val futureReportList: Future[List[ReportSetting]] = cursor.collect[List]()
+
     futureReportList.map { reportList =>
       reportList.size match {
-        case 1 => JsonResponse(Ok(Json.obj("success" -> "ok")))
-        case _ => JsonResponse(Ok(Json.obj("error" -> "Not found")))
+        case 1 => JsonResponse(Ok(SUC_COMMON_OK))
+        case _ => JsonResponse(NotFound(ERR_COMMON_NO_RECORD_FOUND))
       }
     }
   }
@@ -142,6 +142,6 @@ object ReportSettingController extends BaseApiController {
     
     ReportCreator.createCalendar(cpId)
     
-    JsonResponse(Created(Json.obj("success"->"OK")))
+    JsonResponse(Created(SUC_COMMON_OK))
   }
 }

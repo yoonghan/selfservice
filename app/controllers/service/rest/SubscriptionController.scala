@@ -133,7 +133,7 @@ object SubscriptionController extends BaseApiController {
     subscribedIds.fold(
       errors => {
                 Logger.info(errors.toString)
-                Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")))
+                Future.successful(JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT)))
               },
       subId => {
 	/**HALTED - This is only working in Mongo 2.6[S] onwards**/
@@ -201,7 +201,7 @@ object SubscriptionController extends BaseApiController {
 		    }
 		  }
 	/**REPLACEMENT until Mongo 2.6 works[E]**/
-		  Future.successful(JsonResponse(Created(Json.obj("success"->"ok"))))
+		  Future.successful(JsonResponse(Created(SUC_COMMON_OK)))
   	})
   }
 
@@ -269,7 +269,7 @@ object SubscriptionController extends BaseApiController {
 
     futureProfileList.map { profileList =>
       profileList.size match {
-        case 0 => JsonResponse(NotFound(Json.obj()))
+        case 0 => JsonResponse(NotFound(ERR_COMMON_NO_RECORD_FOUND))
         case _ => {
           JsonResponse(Ok(Json.toJson(profileList(0))))
         }
@@ -310,9 +310,9 @@ object SubscriptionController extends BaseApiController {
             val futureUpdate = subscriptionCollection.update(query, updateQuery, GetLastError(), upsert = false, multi = false)
             futureUpdate.map{ lastError =>
               if(lastError.updated == 1)
-                JsonResponse(Created(Json.obj("success"->"OK")))
+                JsonResponse(Created(SUC_COMMON_OK))
               else
-                JsonResponse(NotFound(Json.obj("errors"->Json.arr("Someone has done a concurrent modification on this profile. Please reset to retrieve latest profile."))))
+                JsonResponse(NotFound(JSON_KEYWORD_ERRORS("Someone has done a concurrent modification on this profile. Please reset to retrieve latest profile.")))
             }
           }else{
             Future.successful(JsonResponse(BadRequest(toSubscriptionError(errorList))))

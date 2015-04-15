@@ -24,7 +24,9 @@ object CommonKeys{
   }
 	val JSON_KEYWORD_OK = (successMsg:String) => { Json.obj("success" -> successMsg) }
 
-  val ERR_COMMON_NO_RECORD_FOUND = JSON_KEYWORD_ERRORS("no record found")
+  val ERR_COMMON_NO_RECORD_FOUND = JSON_KEYWORD_ERRORS("No record found")
+  val ERR_COMMON_INVALID_INPUT = JSON_KEYWORD_ERRORS("Unexpected Request, what have you send?")
+  val ERR_COMMON_SERVER_ERROR = JSON_KEYWORD_ERRORS("Unable to generate your request. Please contact the admin/us")
   val SUC_COMMON_OK = JSON_KEYWORD_OK("ok")
 	  
 	val EMPTY_CPID = ""

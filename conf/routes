@@ -76,6 +76,8 @@ GET		/tools/reservationlists				controllers.service.cal.CalendarController.reser
 GET		/tools/reservationlist/:id/users	controllers.service.cal.CalendarController.usersInReservations(id:String)
 DELETE	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_unreserve
 POST	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_reserve
+GET     /tools/editableevents               controllers.service.cal.CalendarController.calendarListForCP
+DELETE  /tools/editableevents               controllers.service.cal.CalendarController.removeCalendarForCP
 
 #Reservation
 GET		/tools/reserve						controllers.service.cal.CalendarController.reservedList

@@ -8,27 +8,17 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json._
 import models.beans.CalendarModel._
-import play.api.Play.current
-import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 import reactivemongo.api._
-import controllers.jobs.LogActor
 import utils.CommonKeys._
 import com.wordnik.swagger.annotations.{Api,ApiOperation,ApiResponses,ApiResponse,ApiImplicitParams,ApiImplicitParam,ApiParam}
-import scala.concurrent.duration._
-import play.api.data.Forms._
 import reactivemongo.core.commands.GetLastError
-import scala.util.Failure
-import scala.util.Success
 import controllers.jobs.CalendarCreator
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import utils.ConfigurationSetup
-import models.beans.SubscriptionModel
 import models.beans.UserModel.{UserProfileWithId,UserMasked,UserStorageModel,maskId,unmaskId}
 import models.beans.EnumTableList
-import controllers.jobs.ReportCreator
-import models.beans.UserModel
 import javax.ws.rs.PathParam
 
 
@@ -57,44 +47,44 @@ object CalendarController extends BaseApiController with MongoController{
   @ApiResponses(Array(
       new ApiResponse(code = 401, message = "User had no authorities to access")))
 	def schedules = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
-	    val userId = request.session(USER_ID)
+    val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 		val userName = userIDCombination(oType,userId)
 		val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
-		
+
 	    //retrieve only subscribed calendar
-	    val querySub = Json.obj(
+	  val querySub = Json.obj(
 	    		"subs" -> Json.obj("$in" -> Json.arr(userName))
 	        )
 	    
-	    import models.beans.SubscriptionModel._
+	  import models.beans.SubscriptionModel._
 	    
-	    val fndSubCursor:Cursor[SubUserIdMapCpId] = subCollection.find(querySub).cursor[SubUserIdMapCpId]
-	    val curFutureSubList: Future[List[SubUserIdMapCpId]] = fndSubCursor.collect[List]()
+    val fndSubCursor:Cursor[SubUserIdMapCpId] = subCollection.find(querySub).cursor[SubUserIdMapCpId]
+    val curFutureSubList: Future[List[SubUserIdMapCpId]] = fndSubCursor.collect[List]()
 	    
-	    curFutureSubList.flatMap{ subList =>
-	      subList.size match{
-	        case 0 => val empty:List[Calendar] = Nil;Future.successful(JsonResponse(Ok(Json.toJson(empty))))
-	        case _ =>{
-	        	val cpIds = for(subCp <- subList) yield subCp.id 
-	          
-			    val query = Json.obj(
-				    "reg.id" -> Json.obj("$ne" -> userName), 
-				    "pend.id" -> Json.obj("$ne" -> userName),
-				    "avail" -> Json.obj("$gt" -> 0),
-				    "start" -> Json.obj("$gt" -> currDate.getMillis()),
-				    "cpId" -> Json.obj("$in" -> cpIds)
-				    )
-				
-				val cursor:Cursor[Calendar] = calCollection.find(query).cursor[Calendar]
-				val futureCalList: Future[List[Calendar]] = cursor.collect[List]()
-				
-			    futureCalList.map { calList =>
-			    	JsonResponse(Ok(Json.toJson(calList)))
-			    }
-	        }
-	      }
-	    }
+    curFutureSubList.flatMap{ subList =>
+      subList.size match{
+        case 0 => val empty:List[Calendar] = Nil;Future.successful(JsonResponse(Ok(Json.toJson(empty))))
+        case _ =>{
+          val cpIds = for(subCp <- subList) yield subCp.id
+
+        val query = Json.obj(
+          "reg.id" -> Json.obj("$ne" -> userName),
+          "pend.id" -> Json.obj("$ne" -> userName),
+          "avail" -> Json.obj("$gt" -> 0),
+          "start" -> Json.obj("$gt" -> currDate.getMillis()),
+          "cpId" -> Json.obj("$in" -> cpIds)
+          )
+
+      val cursor:Cursor[Calendar] = calCollection.find(query).cursor[Calendar]
+      val futureCalList: Future[List[Calendar]] = cursor.collect[List]()
+
+        futureCalList.map { calList =>
+          JsonResponse(Ok(Json.toJson(calList)))
+        }
+        }
+      }
+    }
   }
   
   /**
@@ -109,15 +99,15 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
 	def reservedList = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
-	    val userId = request.session(USER_ID)
+	  val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 	
 		val cursor:Cursor[CalendarReserved] = calCollection.find(Json.obj("reg.id" -> userIDCombination(oType,userId))).cursor[CalendarReserved]
 		val futureCalList: Future[List[CalendarReserved]] = cursor.collect[List]()
 		
-	    futureCalList.map { calList =>
-	    	JsonResponse(Ok(Json.toJson(calList)))
-	    }
+    futureCalList.map { calList =>
+      JsonResponse(Ok(Json.toJson(calList)))
+    }
   }
   
   /**
@@ -132,15 +122,15 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
 	def pendingReserveList = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
-	    val userId = request.session(USER_ID)
+	  val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 	
 		val cursor:Cursor[CalendarReserved] = calCollection.find(Json.obj("pend.id" -> userIDCombination(oType,userId))).cursor[CalendarReserved]
 		val futureCalList: Future[List[CalendarReserved]] = cursor.collect[List]()
 		
-	    futureCalList.map { calList =>
-	    	JsonResponse(Ok(Json.toJson(calList)))
-	    }
+    futureCalList.map { calList =>
+      JsonResponse(Ok(Json.toJson(calList)))
+    }
   }
   
   /**
@@ -148,7 +138,7 @@ object CalendarController extends BaseApiController with MongoController{
    */
   @ApiOperation(
     nickname = "Booking", 
-    value = "Confirm Booking", 
+    value = "Do A Booking",
     notes = "Schedule A booking", 
     response = classOf[Calendar],
     httpMethod = "POST"
@@ -156,16 +146,16 @@ object CalendarController extends BaseApiController with MongoController{
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   @ApiImplicitParams(Array(
     new ApiImplicitParam(value = "Event Id that needs to be reserved", required = true, dataType = "Calendar_Reservation", paramType = "body")))
-  def reserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>    
+    def reserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
-	val calReservation = request.body.validate[CalReservation]
+	  val calReservation = request.body.validate[CalReservation]
     val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
     
     calReservation.fold(
         errors => {
           Logger.info(errors.toString)
-          Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+          Future.successful(JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT)));
         },
         reservation => {
           
@@ -203,10 +193,10 @@ object CalendarController extends BaseApiController with MongoController{
             updateRec.map{
                 result => 
                 if(result.updated == 1)
-                	JsonResponse(Created(Json.obj("success"->"OK")))
+                	JsonResponse(Created(SUC_COMMON_OK))
                 else{
                   //we don't impose reason javascript should have handled it.
-                  JsonResponse(Created(Json.obj("error"->"Record Not Found")))
+                  JsonResponse(BadRequest(ERR_COMMON_NO_RECORD_FOUND))
                 }
             }
           }else{
@@ -221,7 +211,7 @@ object CalendarController extends BaseApiController with MongoController{
    */
   @ApiOperation(
     nickname = "Cancellation", 
-    value = "cancellation", 
+    value = "Cancellation",
     notes = "Cancel a Booking", 
     response = classOf[Calendar],
     httpMethod = "DELETE"
@@ -229,19 +219,19 @@ object CalendarController extends BaseApiController with MongoController{
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   @ApiImplicitParams(Array(
     new ApiImplicitParam(value = "Event Id that needs to be cancelled", required = true, dataType = "Calendar_Cancellation", paramType = "body")))
-  def unreserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>    
+    def unreserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
-	val calCancellation = request.body.validate[CalCancellation];
+	  val calCancellation = request.body.validate[CalCancellation];
 		
     calCancellation.fold(
         errors => {
           Logger.info(errors.toString)
-        	Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+        	Future.successful(JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT)));
         },
         reservation => {
             //TODO: To calculate maximum, hackable in this way.
-            removeUser(reservation.id, userIDCombination(oType,userId), Option.empty) 
+            removeUser(reservation.id, userIDCombination(oType,userId), Option.empty)
         }
 	   )
   }
@@ -262,12 +252,12 @@ object CalendarController extends BaseApiController with MongoController{
     val oType = request.session(OTYPE)
     val userId = userIDCombination(oType, _userId)
     
-	val reservationSetup = request.body.validate[ReservationSetup];
+	  val reservationSetup = request.body.validate[ReservationSetup];
 	
     reservationSetup.fold(
         errors => {
           Logger.error("error:-"+errors.toString)
-          Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+          Future.successful(JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT)));
         },
         setup => {
           val errorList = validateSetupInput(setup)
@@ -278,9 +268,9 @@ object CalendarController extends BaseApiController with MongoController{
                 result =>
                 if(result.ok){
                   CalendarCreator.createCalendar(setup, userId);
-                	JsonResponse(Created(Json.obj("success"->"OK")))
+                	JsonResponse(Created(SUC_COMMON_OK))
                 }else
-                	JsonResponse(Created(Json.obj("error"->"FAIL")))
+                	JsonResponse(InternalServerError(ERR_COMMON_SERVER_ERROR))
             }
           }else{
             Logger.error("List of errors"+errorList);
@@ -303,7 +293,7 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def calendarconf(from:Long, to:Long) = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
-	    val userId = request.session(USER_ID)
+	  val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 		val userName = userIDCombination(oType,userId)
 		val query = 
@@ -333,8 +323,8 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def copySetup = AuthorizeUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>    
-	    val userId = request.session(USER_ID)
-	    val cpId = request.session(CP_ID)
+	  val userId = request.session(USER_ID)
+	  val cpId = request.session(CP_ID)
 		val oType = request.session(OTYPE)
 		val userName = userIDCombination(oType,userId)
 		val tempCal = request.body.validate[List[TempCalendar]];
@@ -342,11 +332,11 @@ object CalendarController extends BaseApiController with MongoController{
 	    tempCal.fold(
 	        errors => {
 	          Logger.error("CopySetup Errors:-"+errors.toString)
-	          JsonResponse(BadRequest("Unexpected Request, what have you sent?"))
+	          JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT))
 	        },
 	        setup => {
 	          CalendarCreator.makeLiveCalendar(setup, cpId, userName)
-	          JsonResponse(Created(Json.obj("success"->"OK")))
+	          JsonResponse(Created(SUC_COMMON_OK))
 	        }
   		)
   }
@@ -363,12 +353,12 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def deleteSetup = AuthorizeUser(BodyParsers.parse.json){request =>    
-	    val userId = request.session(USER_ID)
+	  val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 		val userName = userIDCombination(oType,userId)
 	    
       CalendarCreator.removeLiveCalendar(userName)
-      JsonResponse(Created(Json.obj("success"->"OK")))
+      JsonResponse(Created(SUC_COMMON_OK))
   }
   
   /**
@@ -383,7 +373,7 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def reservationProgress = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
-	    val userId = request.session(USER_ID)
+	  val userId = request.session(USER_ID)
 		val oType = request.session(OTYPE)
 		val userName = userIDCombination(oType,userId)
 	    val query = Json.obj("userId" -> userName)
@@ -411,7 +401,6 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   def reservationList = AuthorizeAsyncUser(BodyParsers.parse.anyContent,AUTH_CAL_CREATE_LVL){ request =>
-	import models.beans.SubscriptionModel._
     val cpId = request.session(CP_ID)
 	
 	
@@ -511,17 +500,14 @@ object CalendarController extends BaseApiController with MongoController{
         }
       }
       case _ => {
-        Future.successful(JsonResponse(BadRequest(Json.obj("error"->"No such record"))))
+        Future.successful(JsonResponse(BadRequest(ERR_COMMON_NO_RECORD_FOUND)))
       }
     }
     }
 //			}
 //		)
   }
-  
-  
-  
-  
+
   /**
    * Cancel a booking by CP
    */
@@ -534,17 +520,17 @@ object CalendarController extends BaseApiController with MongoController{
     )
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def cmd_unreserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>    
-	val calReservation = request.body.validate[CalCmdReserve];
-	val cpId = request.session(CP_ID)
+    val calReservation = request.body.validate[CalCmdReserve];
+    val cpId = request.session(CP_ID)
     	
     calReservation.fold(
         errors => {
           Logger.info(errors.toString)
-        	Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+        	Future.successful(JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT)));
         },
         reservation => {
-			val userId = unmaskId(reservation.userId )
-			removeUser(reservation.id, userId, Option(cpId)) 
+          val userId = unmaskId(reservation.userId )
+          removeUser(reservation.id, userId, Option(cpId))
         }
 	   )
   }
@@ -562,13 +548,13 @@ object CalendarController extends BaseApiController with MongoController{
   @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
   def cmd_reserve = AuthorizeAsyncUser(BodyParsers.parse.json, AUTH_CAL_CREATE_LVL){request =>
     val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
-	val calReservation = request.body.validate[CalCmdReserve];
-	val cpId = request.session(CP_ID)
+    val calReservation = request.body.validate[CalCmdReserve];
+    val cpId = request.session(CP_ID)
     	
     calReservation.fold(
         errors => {
           Logger.info(errors.toString)
-        	Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+        	Future.successful(JsonResponse(BadRequest(ERR_COMMON_INVALID_INPUT)));
         },
         reservation => {
 			val userId = unmaskId(reservation.userId )
@@ -591,20 +577,20 @@ object CalendarController extends BaseApiController with MongoController{
 			        val w_response = updateRec.map{
 			    	  w_result => {
 			    	    if(w_result.updated == 1){
-			    	    	JsonResponse(Created(Json.obj("success"->"OK")))
+			    	    	JsonResponse(NoContent)
 			    	    }else{
 			    	      Logger.info(Json.stringify(query))
-			    	    	JsonResponse(BadRequest(Json.obj("error"->"We do not process past dates or there is no event found.")))
+			    	    	JsonResponse(BadRequest(JSON_KEYWORD_ERRORS("We do not process past dates or there is no event found.")))
 			    	    }
 			    	  }
 			    	}
 			    	w_response
 			    }else{
-			      Future.successful(JsonResponse(BadRequest(Json.obj("error"->"We do not process past dates or there is no event found."))))
+			      Future.successful(JsonResponse(BadRequest(JSON_KEYWORD_ERRORS("We do not process past dates or there is no event found."))))
 			    }
 			  }
 			}
-       })
+    })
   }
   
   
@@ -628,19 +614,94 @@ object CalendarController extends BaseApiController with MongoController{
 	      )
       }
     
-	val con_jsonObj = Json.obj( "$inc" -> Json.obj( "avail" -> 1),
-	      "$pull" -> Json.obj("reg" -> Json.obj("id" -> userId)),
-	      "$pull" -> Json.obj("pend" -> Json.obj("id" -> userId))
-	      )
-	val updateRec = calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false)
-	val response = updateRec.map{
-	result => {
-		if(result.updated == 1)
-			JsonResponse(Created(Json.obj("success"->"OK")))
-		else
-	        JsonResponse(Created(Json.obj("error"->"We do not process past dates or there is no event found.")))
-		}
-	}
-	response
-  } 
+    val con_jsonObj = Json.obj( "$inc" -> Json.obj( "avail" -> 1),
+          "$pull" -> Json.obj("reg" -> Json.obj("id" -> userId)),
+          "$pull" -> Json.obj("pend" -> Json.obj("id" -> userId))
+          )
+    val updateRec = calCollection.update(query, con_jsonObj, GetLastError(), upsert = false, multi = false)
+    val response = updateRec.map{
+    result => {
+      if(result.updated == 1)
+        JsonResponse(NoContent)
+      else
+        JsonResponse(Created(JSON_KEYWORD_ERRORS("We do not process past dates or there is no event found.")))
+      }
+    }
+    response
+  }
+
+  /**
+   * Shows the list of reservations details
+   */
+  @ApiOperation(
+    nickname = "eventlist",
+    value = "events",
+    notes = "List of events",
+    response = classOf[Calendar],
+    responseContainer = "List",
+    httpMethod = "GET"
+  )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
+  def calendarListForCP = AuthorizeAsyncUser(BodyParsers.parse.anyContent,AUTH_CAL_CREATE_LVL){ request =>
+    val cpId = request.session(CP_ID)
+    val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
+
+    val query = Json.obj(
+      "cpId" -> cpId,
+      "$or" -> Json.arr( Json.obj("reg"-> Json.obj("$exists" -> false)), Json.obj("reg"-> Json.obj("$size" -> 0))),
+      "$or" -> Json.arr( Json.obj("pend"-> Json.obj("$exists" -> false)), Json.obj("pend"-> Json.obj("$size" -> 0))),
+      "start" -> Json.obj("$gt" -> currDate.getMillis)
+    )
+    val cursor:Cursor[Calendar] = calCollection.find(query).cursor[Calendar]
+    val futureCalList: Future[List[Calendar]] = cursor.collect[List]()
+
+    val resp = futureCalList.map { calList =>
+      JsonResponse(Ok(Json.toJson(calList)))
+    }
+    resp
+  }
+
+  /**
+   * Shows the list of reservations details
+   */
+  @ApiOperation(
+    nickname = "removeevent from eventlist",
+    value = "removeevents",
+    notes = "Remove events from list",
+    httpMethod = "DELETE"
+  )
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
+  def removeCalendarForCP = AuthorizeAsyncUser(BodyParsers.parse.json,AUTH_CAL_CREATE_LVL){ request =>
+    val cpId = request.session(CP_ID)
+    val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
+    val calCancellation = request.body.validate[CalCancellation];
+
+    calCancellation.fold(
+      errors => {
+        Logger.info(errors.toString)
+        Future.successful(JsonResponse(BadRequest("Unexpected Request, what have you sent?")));
+      },
+      reservation => {
+        val query = Json.obj(
+          "cpId" -> cpId,
+          "$or" -> Json.arr(Json.obj("reg" -> Json.obj("$exists" -> false)), Json.obj("reg" -> Json.obj("$size" -> 0))),
+          "$or" -> Json.arr(Json.obj("pend" -> Json.obj("$exists" -> false)), Json.obj("pend" -> Json.obj("$size" -> 0))),
+          "start" -> Json.obj("$gt" -> currDate.getMillis),
+          "_id" -> Json.obj("$oid"->reservation.id)
+        )
+        val updateRec = calCollection.remove(query, GetLastError(), true)
+        updateRec.map { result =>
+          if (result.updated > 0)
+            JsonResponse(NoContent)
+          else {
+            JsonResponse(NotFound(JSON_KEYWORD_ERRORS("Records not removable")))
+          }
+        }
+      }
+    )
+  }
 }
+//import org.joda.time.format.DateTimeFormat
+//val formatter = DateTimeFormat.forPattern("yyyy-mm-dd");
+//val x = "2015-02-22"
+//val dt = formatter.parseDateTime(x)
