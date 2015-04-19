@@ -57,6 +57,14 @@ object Utility {
       }
 	}
 	
+	def sendEmailAsHtml(bccList:Option[String], subject:String, message:String){
+	  if(testEnv.isDefined && testEnv.get == "test"){
+        Logger.error("Replicate of email sending to:["+bccList+"], message["+message+"]");
+      }else {
+		new EmailUtility().sendEmailAsHTML(Option.empty, bccList, subject, message )
+      }
+	}
+	
 	def sendEmail(bccList:Option[String], subject:String, message:String, fileName:String){
 	  if(testEnv.isDefined && testEnv.get == "test"){
 		  Logger.error("Replicate email sending with attachment:["+message+"]");

@@ -19,6 +19,7 @@ import models.beans.CalendarModel.CalendarRegisteredUser
 import models.beans.ReminderModel.ReminderSetting
 import models.beans.EmailNotifyModel.{EmailNotify,Notify}
 import utils.CommonKeys.EMAIL_REMINDER_TYPE 
+import controllers.service.mail.MailReader
 
  
 object CalendarNotifyJob {
@@ -100,10 +101,8 @@ class CalendarNotifyActor extends UntypedActor with MongoJob{
    * Search all users that is registered under the calendar setup
    */
   def searchUserRegistered(dateSearch:String, calList:List[CalendarRegisteredUser], period:Int){
-    
     for(cal <- calList){
       if(cal.reg.isDefined){
-        
         import models.beans.UserModel.UserStorageModel
         
     	val listOfUsers:List[UserStorageModel] = cal.reg.get
@@ -121,8 +120,9 @@ class CalendarNotifyActor extends UntypedActor with MongoJob{
         val curFutureSubList: Future[List[ReminderSetting]] = searchQuery.collect[List]()
         
         curFutureSubList.map(usersReminder =>
-          if(usersReminder.size > 0)
+          if(usersReminder.size > 0){
         	  notifyViaEmail(dateSearch, usersReminder, cal)
+          }
 		)
       //}
       }
@@ -138,21 +138,26 @@ class CalendarNotifyActor extends UntypedActor with MongoJob{
     val emailDistribution = (for(user <- usersReminder) yield (user.alertEmail.get)).mkString(",")
     val startDate = new DateTime(cal.start)
     val endDate = new DateTime(cal.end)
-    val date = startDate.toString("EEE - dd/MMM/yyyy")
-    val time = if(cal.allDay) {"Whole day"} else {startDate.toString("HH:mm a")}
+    val eventDate = startDate.toString("dd")
+    val eventMonth = startDate.toString("MMM")
+    val starttime = startDate.toString("HH:mm a")
+    val endtime = if(cal.allDay) {"Whole day"} else {endDate.toString("HH:mm a")}
     val title = cal.title 
     val desc = cal.desc.replaceAll("\n", " ") 
-    val emailMessage = "Hello there,\n\n" +
-    		"This is a kind reminder from JOM Jaring.\n\n" +
-    		"You had made a booking and this are the provided details.\n"+
-    		s"Date: $date\n"+
-    		s"Time: $time\n"+
-    		s"Title: $title\n"+
-    		s"Desc: $desc\n\n"+
-    		"Your punctuality against the time is important to/as our guest. Thank you.\n\n"+
-    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
-    		"Sincerity from,\n"+
-    		"JOM Jaring";
+//    val emailMessage = "Hello there,\n\n" +
+//    		"This is a kind reminder from JOM Jaring.\n\n" +
+//    		"You had made a booking and this are the provided details.\n"+
+//    		s"Date: $date\n"+
+//    		s"Time: $time\n"+
+//    		s"Title: $title\n"+
+//    		s"Desc: $desc\n\n"+
+//    		"Your punctuality against the time is important to/as our guest. Thank you.\n\n"+
+//    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
+//    		"Sincerity from,\n"+
+//    		"JOM Jaring";
+
+    val objReader = MailReader.ObjReplace(eventMonth, eventDate, starttime, endtime, title, desc) 
+    val emailMessage = MailReader.getTemplate(objReader)
     
     val _id = cal.id+dateSearch
     val notifyObj = EmailNotify(_id, cal.id, dateSearch, EMAIL_REMINDER_TYPE  ,emailDistribution, emailMessage, false)
@@ -163,6 +168,7 @@ class CalendarNotifyActor extends UntypedActor with MongoJob{
           LogActor.logActor ! ("notifyViaEmail >> Unable to insert:"+notifyObj.toString())
         }
     }
+    
   }
   
   /**

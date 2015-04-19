@@ -13,7 +13,7 @@ object ConfigurationSetup {
 	val FOLDER_TEMP = current.configuration.getString("tempfile_folder.uri").get
 	val FOLDER_STORE = current.configuration.getString("storefile_folder.uri").get
 	val FOLDER_PICTURE = "picture/"
-  val IMAGE_GENERATOR = current.configuration.getString("image_generator.uri").get
+    val IMAGE_GENERATOR = current.configuration.getString("image_generator.uri").get
 	
 	val MIN_BOOKING_HR = try{Integer.parseInt(bookinghr,10)} catch {case e:Exception => 0}
 	
@@ -25,11 +25,11 @@ object ConfigurationSetup {
 	//Excel type
 	val EXCEL_TYPE = ".xlsx"
     
-	val LOGOUT_LOCATION = current.configuration.getString("logout").get;
+	val LOGOUT_LOCATION = current.configuration.getString("logout").get
 	
 	//Email Controls
-	val EMAIL_VALID_PATH = current.configuration.getString("email.validated").get;
-	val EMAIL_INVALID_PATH = current.configuration.getString("email.invalidated").get;
+	val EMAIL_VALID_PATH = current.configuration.getString("email.validated").get
+	val EMAIL_INVALID_PATH = current.configuration.getString("email.invalidated").get
 	
 	//Control Upload Size
 	val MAX_UPLOAD_SIZE:Int = {
@@ -45,4 +45,13 @@ object ConfigurationSetup {
 		  size * 1024
 	  }
 	}
+	
+	//Default Val
+	val COMPANY_NAME="JOM Jaring"
+	val MAILTEMPLATE="mailtemplate.html"
+	val CURR_YEAR="2015"
+	
+	//Mail Chimp APIs
+	val MAILCHIMP_URL=current.configuration.getString("mailchimp.url").get
+	val MAILCHIMP_APIKEY=current.configuration.getString("mailchimp.apikey").get
 }

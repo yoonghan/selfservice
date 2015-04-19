@@ -57,7 +57,7 @@ class EmailSendActor extends UntypedActor with MongoJob{
     emailsToSend.par.map{ email=>   
      
      email.emailType match{
-       case EMAIL_REMINDER_TYPE => utils.Utility.sendEmail(Option(email.emailDist), "A Kind Reminder", email.message )
+       case EMAIL_REMINDER_TYPE => utils.Utility.sendEmailAsHtml(Option(email.emailDist), "A Kind Reminder", email.message )
        case EMAIL_VALIDATOR_TYPE => utils.Utility.sendEmail(Option(email.emailDist), "Verify Your Email", email.message )
        case _emailType => LogActor.logActor ! "Invalid email type sent:" + _emailType
      }
