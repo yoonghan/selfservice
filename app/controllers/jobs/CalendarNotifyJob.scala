@@ -18,8 +18,9 @@ import models.beans.EnumTableList._
 import models.beans.CalendarModel.CalendarRegisteredUser
 import models.beans.ReminderModel.ReminderSetting
 import models.beans.EmailNotifyModel.{EmailNotify,Notify}
-import utils.CommonKeys.EMAIL_REMINDER_TYPE 
+import utils.CommonKeys.EMAIL_REMINDER_TYPE
 import controllers.service.mail.MailReader
+import java.util.Locale
 
  
 object CalendarNotifyJob {
@@ -139,7 +140,7 @@ class CalendarNotifyActor extends UntypedActor with MongoJob{
     val startDate = new DateTime(cal.start)
     val endDate = new DateTime(cal.end)
     val eventDate = startDate.toString("dd")
-    val eventMonth = startDate.toString("MMM")
+    val eventMonth = startDate.toString("MMMM", Locale.ENGLISH)
     val starttime = startDate.toString("HH:mm a")
     val endtime = if(cal.allDay) {"Whole day"} else {endDate.toString("HH:mm a")}
     val title = cal.title 
@@ -156,7 +157,7 @@ class CalendarNotifyActor extends UntypedActor with MongoJob{
 //    		"Sincerity from,\n"+
 //    		"JOM Jaring";
 
-    val objReader = MailReader.ObjReplace(eventMonth, eventDate, starttime, endtime, title, desc) 
+    val objReader = MailReader.ObjReplace(eventMonth, eventDate, title, starttime, endtime,  desc) 
     val emailMessage = MailReader.getTemplate(objReader)
     
     val _id = cal.id+dateSearch

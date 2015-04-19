@@ -4,18 +4,22 @@ import play.api.libs.ws._
 import scala.concurrent.Future
 import utils.ConfigurationSetup
 import play.api.mvc.Controller
-
 import play.api.libs.json._
 import play.api.Play.current
+import com.jaring.jom.util.common.PropertyLoaderUtil
+import java.util.Properties
 
 object WSTrigger{
 
   //Timeout duration has been configured in application.conf
   
-  val APIKEY = ConfigurationSetup.MAILCHIMP_APIKEY 
-		  						
+  val property:Properties = PropertyLoaderUtil.propertyLoader("mailchimp.properties").get
+  val URL = property.getProperty("mailchimp.url")
+  val APIKEY = property.getProperty("mailchimp.apikey")
+  property.clear();
+  
   private def getWS(relativePath:String):WSRequestHolder = {
-	  WS.url(ConfigurationSetup.MAILCHIMP_URL + relativePath)
+	  WS.url(URL + relativePath)
 			.withHeaders("content-type" -> "application/json")
   }
 		  						

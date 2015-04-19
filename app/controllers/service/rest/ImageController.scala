@@ -16,7 +16,7 @@ import play.api.Play.current
 import com.wordnik.swagger.annotations._
 import com.wordnik.swagger.core.util.ScalaJsonUtil
 import controllers.service.BaseApiController
-import models.beans.EnumTableList.IMAGE 
+import models.beans.EnumTableList.IMAGE
 
 @Api(value = "/image", description = "All images information")
 object ImageController extends BaseApiController {

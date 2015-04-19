@@ -46,12 +46,11 @@ object ConfigurationSetup {
 	  }
 	}
 	
-	//Default Val
+	//Default Values
 	val COMPANY_NAME="JOM Jaring"
+	val LOGIN_PAGE="http://login.jomjaring.com"
+	val SUBJECT="Reminder"
 	val MAILTEMPLATE="mailtemplate.html"
 	val CURR_YEAR="2015"
 	
-	//Mail Chimp APIs
-	val MAILCHIMP_URL=current.configuration.getString("mailchimp.url").get
-	val MAILCHIMP_APIKEY=current.configuration.getString("mailchimp.apikey").get
 }
