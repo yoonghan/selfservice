@@ -329,7 +329,7 @@ class BGReportCreator extends Actor with MongoJob{
 	      val event = eventList(eventCnt)
 	      writeListEvent(3, eventCnt, event, mainSheet)
 	      val listRegUserId = if(event.reg.isDefined && event.reg.get.size > 0 || event.pend.isDefined && event.pend.get.size > 0){
-          val eventSheet = createSheet(workbook, event.title + "_" + DATE_FORMAT.format(event.start ))
+          val eventSheet = createSheet(workbook, event.title + "_" + DATE_FORMAT.format(event.start )+ "_" + eventCnt)
 		      writeEvent(0, eventCnt, event, eventSheet)
 			    createEventHeader(eventGap, eventSheet)
 			    (processUserPerEvent(event.reg.getOrElse(Nil), event.pend.getOrElse(Nil), event, eventGap+1, eventSheet, workbook))

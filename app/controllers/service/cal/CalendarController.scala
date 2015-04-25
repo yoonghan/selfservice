@@ -231,7 +231,7 @@ object CalendarController extends BaseApiController with MongoController{
         },
         reservation => {
             //TODO: To calculate maximum, hackable in this way.
-            removeUser(reservation.id, userIDCombination(oType,userId), Option.empty)
+            removeUserFromEvent(reservation.id, userIDCombination(oType,userId), Option.empty)
         }
 	   )
   }
@@ -530,7 +530,7 @@ object CalendarController extends BaseApiController with MongoController{
         },
         reservation => {
           val userId = unmaskId(reservation.userId )
-          removeUser(reservation.id, userId, Option(cpId))
+          removeUserFromEvent(reservation.id, userId, Option(cpId))
         }
 	   )
   }
@@ -594,7 +594,7 @@ object CalendarController extends BaseApiController with MongoController{
   }
   
   
-  private def removeUser(reservationId:String, userId:String, cpId:Option[String]):Future[play.api.mvc.Result]={
+  private def removeUserFromEvent(reservationId:String, userId:String, cpId:Option[String]):Future[play.api.mvc.Result]={
     
     val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
     
@@ -624,7 +624,7 @@ object CalendarController extends BaseApiController with MongoController{
       if(result.updated == 1)
         JsonResponse(NoContent)
       else
-        JsonResponse(Created(JSON_KEYWORD_ERRORS("We do not process past dates or there is no event found.")))
+        JsonResponse(BadRequest(JSON_KEYWORD_ERRORS("We do not process past dates or there is no event found.")))
       }
     }
     response
