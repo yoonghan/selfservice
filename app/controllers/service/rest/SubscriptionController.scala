@@ -404,7 +404,7 @@ object SubscriptionController extends BaseApiController {
           Future.successful(JsonResponse(BadRequest(JSON_KEYWORD_ERRORS("Unexpected Request, what have you sent?"))))
         },
         subImg => {
-          val ext = subImg.ext.get
+          val ext = subImg.ext.get.toLowerCase()
           val ver = subImg.ver
           val cpId = request.session(CP_ID)
           val userAuth = userIDCombination(request.session(OTYPE), request.session(USER_ID))
