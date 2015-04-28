@@ -6,16 +6,16 @@ import java.nio.file.{Files,StandardCopyOption}
 /**
  * Copied from User: Kayrnt
  */
-case class FlowInfo(resumableChunkSize: Int,
-                         resumableTotalSize: Long = 0L,
-                         resumableIdentifier: String = null,
-                         resumableFilename: String = null,
-                         resumableRelativePath: String = null,
-                         resumableFilePath: String = null) {
+class FlowInfo(val resumableChunkSize: Int,
+             val resumableTotalSize: Long = 0L,
+             val resumableIdentifier: String = null,
+             val resumableFilename: String = null,
+             val resumableRelativePath: String = null,
+             val resumableFilePath: String = null) {
 
-  type ResumableChunckNumber = Int
+  type ResumableChunkNumber = Int
 
-  var uploadedChunks: Set[Int] = Set[ResumableChunckNumber]()
+  var uploadedChunks: Set[Int] = Set[ResumableChunkNumber]()
 
   def valid: Boolean = {
     if (resumableChunkSize < 0 || resumableTotalSize < 0 || resumableIdentifier.isEmpty || resumableFilename.isEmpty || resumableRelativePath.isEmpty) false
@@ -25,7 +25,7 @@ case class FlowInfo(resumableChunkSize: Int,
   def checkIfUploadFinished: Boolean = {
     //check if upload finished
     val count: Int = Math.ceil(resumableTotalSize.toDouble / resumableChunkSize.toDouble).toInt
-    (1 to count).map {
+    (1 until count).map {
       i =>
         if (!uploadedChunks.contains(i)) {
           return false

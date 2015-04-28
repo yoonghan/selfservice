@@ -95,8 +95,8 @@ POST	/report/setting						controllers.service.rest.ReportSettingController.setti
 GET		/rest/image/intro					controllers.service.rest.ImageController.findAllIntroImage
 
 # Utilities
-POST	/tools/upload						controllers.service.html.Upload.upload
-GET		/tools/upload						controllers.service.html.Upload.uploadGet
+POST	/tools/upload						controllers.service.html.ImageUpload.upload
+GET		/tools/upload						controllers.service.html.ImageUpload.uploadGet
 
 # Test services
 GET		/test/testprofile   				controllers.service.test.TestHelper.testprofile(code:Int = 1)
@@ -106,6 +106,10 @@ GET		/test/prepareBooking/:conf			controllers.service.test.TestHelper.prepareBoo
 
 # Mail chimp trigger
 GET		/mail/ping							controllers.service.mailchimp.MailChimpController.ping
+
+#Test upload
+POST	/special/upload						controllers.Application.upload
+GET		/special/upload						controllers.Application.get
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file						controllers.Assets.at(path="/public", file)

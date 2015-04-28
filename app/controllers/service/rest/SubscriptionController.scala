@@ -409,7 +409,7 @@ object SubscriptionController extends BaseApiController {
           val cpId = request.session(CP_ID)
           val userAuth = userIDCombination(request.session(OTYPE), request.session(USER_ID))
 
-          Logger.info(ext+":"+ver+":"+cpId+":")
+          Logger.info("Image inserted >> ext:"+ext+",ver:"+ver+",cpId:"+cpId)
 
 		  if(ext == ".jpg" || ext == ".jpeg" || ext == ".png"){
 		    if(copyImage(userAuth+ext, cpId+ext)){

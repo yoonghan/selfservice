@@ -7,7 +7,7 @@ import scala.collection.mutable
  */
 
 object FlowInfoStorage {
-  private var mMap: mutable.HashMap[String, FlowInfo] = new mutable.HashMap[String, FlowInfo]()
+  private val mMap: mutable.HashMap[String, FlowInfo] = new mutable.HashMap[String, FlowInfo]()
 
   /**
    * Get ResumableInfo from mMap or Create a new one.
@@ -21,7 +21,7 @@ object FlowInfoStorage {
    */
   def get(resumableChunkSize: Int, resumableTotalSize: Long, resumableIdentifier: String, resumableFilename: String, resumableRelativePath: String, resumableFilePath: String): FlowInfo =
     mMap.getOrElse(resumableIdentifier, {
-      val ri = FlowInfo(resumableChunkSize, resumableTotalSize, resumableIdentifier, resumableFilename, resumableRelativePath, resumableFilePath)
+      val ri = new FlowInfo(resumableChunkSize, resumableTotalSize, resumableIdentifier, resumableFilename, resumableRelativePath, resumableFilePath)
       mMap += (ri.resumableIdentifier -> ri)
       ri
     })

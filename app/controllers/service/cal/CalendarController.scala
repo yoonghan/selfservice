@@ -149,7 +149,7 @@ object CalendarController extends BaseApiController with MongoController{
     def reserve = AuthorizeAsyncUser(BodyParsers.parse.json){request =>
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
-	  val calReservation = request.body.validate[CalReservation]
+    val calReservation = request.body.validate[CalReservation]
     val currDate = (new DateTime(DateTimeZone.UTC)).plusHours(ConfigurationSetup.MIN_BOOKING_HR);
     
     calReservation.fold(
