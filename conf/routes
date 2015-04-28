@@ -107,9 +107,5 @@ GET		/test/prepareBooking/:conf			controllers.service.test.TestHelper.prepareBoo
 # Mail chimp trigger
 GET		/mail/ping							controllers.service.mailchimp.MailChimpController.ping
 
-#Test upload
-POST	/special/upload						controllers.Application.upload
-GET		/special/upload						controllers.Application.get
-
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file						controllers.Assets.at(path="/public", file)

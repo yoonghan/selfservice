@@ -44,7 +44,7 @@ class Global extends GlobalSettings {
         try{
           val storeFolder = new File(_strFolder)
           val tempFolder = new File(_tmpFolder)
-          val extraFolder = Array("picture/","special/")
+          val extraFolder = Array("picture/")
           
           if( ! storeFolder.exists()){
             println("Created:"+ storeFolder.getAbsolutePath()  + ",stat:" + storeFolder.mkdir())
