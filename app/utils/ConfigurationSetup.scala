@@ -24,6 +24,9 @@ object ConfigurationSetup {
 	  
 	//Excel type
 	val EXCEL_TYPE = ".xlsx"
+	  
+	//Image Size
+	val IMG_SIZE = 150
     
 	val LOGOUT_LOCATION = current.configuration.getString("logout").get
 	

@@ -25,7 +25,8 @@ libraryDependencies ++= Seq(
   "com.film42" % "forecast-io-api_2.10" % "0.0.1",
   "io.lamma" %% "lamma" % "2.2.0",
   "org.apache.poi" % "poi" % "3.11",
-  "org.apache.poi" % "poi-ooxml" % "3.11"
+  "org.apache.poi" % "poi-ooxml" % "3.11",
+  "org.imgscalr" % "imgscalr-lib" % "4.2"
 )
 
 scalacOptions += "-feature"

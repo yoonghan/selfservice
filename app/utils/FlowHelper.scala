@@ -34,7 +34,7 @@ trait FlowHelper {
     val flowTotalSizeOpt = request.getQueryString("flowTotalSize")
     val flowIdentifierOpt = request.getQueryString("flowIdentifier")
     val flowFilenameOpt = if(overrideFileName.isEmpty){ request.getQueryString("flowFilename") }
-    						else{ Option.apply(overrideFileName.get + getContentTypeExt(request.getQueryString("flowFilename")))}
+    						else{ Option.apply(overrideFileName.get + getContentTypeExtLowercase(request.getQueryString("flowFilename")))}
     val flowRelativePathOpt = request.getQueryString("flowRelativePath")
     (flowChunkSizeOpt, flowTotalSizeOpt, flowIdentifierOpt, flowFilenameOpt, flowRelativePathOpt) match{
       case (Some(flowChunkSize), Some(flowTotalSize), Some(flowIdentifier),
@@ -54,7 +54,7 @@ trait FlowHelper {
     val flowTotalSizeOpt = getField("flowTotalSize")
     val flowIdentifierOpt = getField("flowIdentifier")
     val flowFilenameOpt = if(overrideFileName.isEmpty){ getField("flowFilename") }else{ 
-    							Option.apply(overrideFileName.get + getContentTypeExt(getField("flowFilename")))}
+    							Option.apply(overrideFileName.get + getContentTypeExtLowercase(getField("flowFilename")))}
     val flowRelativePathOpt = getField("flowRelativePath")
     (flowChunkSizeOpt, flowTotalSizeOpt, flowIdentifierOpt, flowFilenameOpt, flowRelativePathOpt) match{
       case (Some(flowChunkSize), Some(flowTotalSize), Some(flowIdentifier),
@@ -67,10 +67,10 @@ trait FlowHelper {
     }
   }
   
-  protected def getContentTypeExt(content:Option[String]):String = {
+  protected def getContentTypeExtLowercase(content:Option[String]):String = {
     if(content.isDefined){
       val contentType = content.get
-      contentType.substring(contentType.lastIndexOf("."), contentType.length())
+      contentType.substring(contentType.lastIndexOf("."), contentType.length()).toLowerCase()
     }else{
       Logger.error("Invalid file name provided")
       ""

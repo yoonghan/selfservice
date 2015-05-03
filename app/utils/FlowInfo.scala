@@ -2,6 +2,7 @@ package utils
 
 import java.io.File
 import java.nio.file.{Files,StandardCopyOption}
+import com.jaring.jom.util.img.ThumbnailCreator
 
 /**
  * Copied from User: Kayrnt
@@ -35,8 +36,10 @@ class FlowInfo(val resumableChunkSize: Int,
     val file: File = new File(resumableFilePath)
     val newPath: String = file.getAbsolutePath.substring(0, file.getAbsolutePath.length - ".temp".length)
     
-    val renamedFile:File = new File(newPath)
-    Files.move(file.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    //val renamedFile:File = new File(newPath)
+    ThumbnailCreator.resize(resumableFilePath, newPath, ConfigurationSetup.IMG_SIZE , "jpg")
+    file.delete()
+    //Files.move(file.toPath(), renamedFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
     
     return true
   }
