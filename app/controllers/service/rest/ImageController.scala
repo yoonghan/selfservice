@@ -34,7 +34,9 @@ object ImageController extends BaseApiController {
     httpMethod = "GET"
     )
   @ApiResponses(Array(new ApiResponse(code = 404, message = "Images not found")))
-  def findAllIntroImage() = Cached("ImageCache") {Action.async {
+  def findAllIntroImage() =
+    Cached("ImageCache") {Action.async {
+      
     Logger.info("Started Image Cache")
     // let's do our query
     val cursor: Cursor[IntroImage] = collection.find(Json.obj()).cursor[IntroImage]
