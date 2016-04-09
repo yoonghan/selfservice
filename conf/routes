@@ -9,17 +9,17 @@ GET     /api-docs               			controllers.ApiHelpController.getResources
 OPTIONS /*wholepath             			@controllers.service.BaseApiController.getOptions(wholepath)
 
 # API docs maintenance
-GET     /api-docs/image						controllers.ApiHelpController.getResource(path = "/image")
-GET     /api-docs/user						controllers.ApiHelpController.getResource(path = "/user")
-GET     /api-docs/reminder					controllers.ApiHelpController.getResource(path = "/reminder")
-GET     /api-docs/calendar					controllers.ApiHelpController.getResource(path = "/calendar")
+GET     /api-docs/image               controllers.ApiHelpController.getResource(path = "/image")
+GET     /api-docs/user                controllers.ApiHelpController.getResource(path = "/user")
+GET     /api-docs/reminder            controllers.ApiHelpController.getResource(path = "/reminder")
+GET     /api-docs/calendar            controllers.ApiHelpController.getResource(path = "/calendar")
 GET     /api-docs/subscription				controllers.ApiHelpController.getResource(path = "/subscription")
 GET     /api-docs/reportsetting				controllers.ApiHelpController.getResource(path = "/reportsetting")
 
 # Home page
-GET     /									controllers.Application.index
-GET     /help								controllers.Application.help
-GET		/ping								controllers.Application.ping
+GET   /                               controllers.Application.index
+GET   /help                           controllers.Application.help
+GET		/ping                           controllers.Application.ping
 
 # CP page
 GET		/admin/create						controllers.service.html.AdminController.admin
@@ -27,66 +27,66 @@ POST	/admin/create						controllers.service.html.AdminController.save
 
 #Login page
 GET		/service/oauth/send/$atype<G|D_G|F|D_F>	controllers.service.auth.AuthController.oauthSend(atype:String)
-GET		/service/oauth/receiv				controllers.service.auth.AuthController.oauthReceive(code:String ?="", state:String ?= "", error_message:String ?="", error_code:String ?="")
+GET		/service/oauth/receiv				            controllers.service.auth.AuthController.oauthReceive(code:String ?="", state:String ?= "", error_message:String ?="", error_code:String ?="")
 
 #Logout page
-GET		/user/logout						controllers.service.rest.UserController.logout
+GET		/user/logout						  controllers.service.rest.UserController.logout
 
 #Self service
-GET		/user/basicinfo						controllers.service.rest.UserController.userInfo
-GET     /user/accesses						controllers.service.rest.UserController.accesses
-GET     /user/profile						controllers.service.rest.UserController.profile
-PUT     /user/profile						controllers.service.rest.UserController.profileIns
-POST    /user/profile						controllers.service.rest.UserController.profileUpd
-GET     /user/registrationno                controllers.service.rest.UserController.getRegistrationNo
+GET		/user/basicinfo					 controllers.service.rest.UserController.userInfo
+GET   /user/accesses					 controllers.service.rest.UserController.accesses
+GET   /user/profile						 controllers.service.rest.UserController.profile
+PUT   /user/profile						 controllers.service.rest.UserController.profileIns
+POST  /user/profile						 controllers.service.rest.UserController.profileUpd
+GET   /user/registrationno     controllers.service.rest.UserController.getRegistrationNo
 
 #Admin service
 GET		/subscription/profile				controllers.service.rest.SubscriptionController.profile
 POST	/subscription/profile				controllers.service.rest.SubscriptionController.profileUpd
 PUT		/subscription/user					controllers.service.rest.SubscriptionController.subscribeManager
 GET		/subscription/users					controllers.service.rest.UserController.subscribedManagers
-PUT     /subscription/user/:id              controllers.service.rest.UserController.addUserAsProvider(id:String)
-DELETE  /subscription/user/:id              controllers.service.rest.UserController.removeUserFromRegistration(id:String)
+PUT     /subscription/user/:id    controllers.service.rest.UserController.addUserAsProvider(id:String)
+DELETE  /subscription/user/:id    controllers.service.rest.UserController.removeUserFromRegistration(id:String)
 
 #Reminder service
-GET     /reminder/profile					controllers.service.rest.ReminderController.profile
-POST    /reminder/profile					controllers.service.rest.ReminderController.profileIns
+GET     /reminder/profile				controllers.service.rest.ReminderController.profile
+POST    /reminder/profile				controllers.service.rest.ReminderController.profileIns
 GET		/reminder/resent					controllers.service.rest.ReminderController.resendEmailReminder
 GET		/reminder/verify					controllers.service.rest.ReminderController.validateEmailReminder(u:String,k:String)
 
 #Subscription
-GET		/subscription/hosts					controllers.service.rest.SubscriptionController.hostlist
-GET		/subscription/image					controllers.service.rest.SubscriptionController.getCPImage
+GET		/subscription/hosts					        controllers.service.rest.SubscriptionController.hostlist
+GET		/subscription/image					        controllers.service.rest.SubscriptionController.getCPImage
 GET		/subscription/image/:ext/:fileName	controllers.service.rest.SubscriptionController.getImage(ext:String,fileName:String)
-POST	/subscription/hosts					controllers.service.rest.SubscriptionController.updateHostList
-POST	/subscription/imgupload				controllers.service.rest.SubscriptionController.uploadImage
+POST	/subscription/hosts					        controllers.service.rest.SubscriptionController.updateHostList
+POST	/subscription/imgupload				      controllers.service.rest.SubscriptionController.uploadImage
 
 #Weather service
-GET		/tools/weatherinfo					controllers.service.cal.WeatherController.index
+GET		/tools/weatherinfo					  controllers.service.cal.WeatherController.index
 GET		/tools/weatherlocations				controllers.service.cal.WeatherController.weatherlocations
 
 #Calendar
-GET		/tools/calendar						controllers.service.cal.CalendarController.schedules
-PUT		/tools/calendar						controllers.service.cal.CalendarController.create
+GET		/tools/calendar						      controllers.service.cal.CalendarController.schedules
+PUT		/tools/calendar						      controllers.service.cal.CalendarController.create
 GET		/tools/calendarconf/:from/:to		controllers.service.cal.CalendarController.calendarconf(from:Long, to:Long)
-POST	/tools/calendarconf					controllers.service.cal.CalendarController.copySetup
-DELETE	/tools/calendarconf					controllers.service.cal.CalendarController.deleteSetup
-GET		/tools/calendarload					controllers.service.cal.CalendarController.reservationProgress
-GET		/tools/reservationlists				controllers.service.cal.CalendarController.reservationList
+POST	/tools/calendarconf					    controllers.service.cal.CalendarController.copySetup
+DELETE	/tools/calendarconf					  controllers.service.cal.CalendarController.deleteSetup
+GET		/tools/calendarload					    controllers.service.cal.CalendarController.reservationProgress
+GET		/tools/reservationlists				  controllers.service.cal.CalendarController.reservationList
 GET		/tools/reservationlist/:id/users	controllers.service.cal.CalendarController.usersInReservations(id:String)
-DELETE	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_unreserve
-POST	/tools/cmd_reserve					controllers.service.cal.CalendarController.cmd_reserve
-GET     /tools/editableevents               controllers.service.cal.CalendarController.calendarListForCP
-DELETE  /tools/editableevents               controllers.service.cal.CalendarController.removeCalendarForCP
+DELETE	/tools/cmd_reserve					  controllers.service.cal.CalendarController.cmd_unreserve
+POST	/tools/cmd_reserve					    controllers.service.cal.CalendarController.cmd_reserve
+GET     /tools/editableevents         controllers.service.cal.CalendarController.calendarListForCP
+DELETE  /tools/editableevents         controllers.service.cal.CalendarController.removeCalendarForCP
 
 #Reservation
 GET		/tools/reserve						controllers.service.cal.CalendarController.reservedList
 POST	/tools/reserve						controllers.service.cal.CalendarController.reserve
-DELETE	/tools/reserve						controllers.service.cal.CalendarController.unreserve
+DELETE	/tools/reserve					controllers.service.cal.CalendarController.unreserve
 GET		/tools/pending						controllers.service.cal.CalendarController.pendingReserveList
 
 # Generate report
-POST	/report/gen							controllers.service.rest.ReportSettingController.genCorporateReport
+POST	/report/gen							  controllers.service.rest.ReportSettingController.genCorporateReport
 GET		/report/isallow						controllers.service.rest.ReportSettingController.isAllow
 GET		/report/setting						controllers.service.rest.ReportSettingController.setting
 POST	/report/setting						controllers.service.rest.ReportSettingController.settingIns
@@ -99,10 +99,10 @@ POST	/tools/upload						controllers.service.html.ImageUpload.upload
 GET		/tools/upload						controllers.service.html.ImageUpload.uploadGet
 
 # Test services
-GET		/test/testprofile   				controllers.service.test.TestHelper.testprofile(code:Int = 1)
+GET		/test/testprofile   				  controllers.service.test.TestHelper.testprofile(code:Int = 1)
 GET		/test/testprofile/:code				controllers.service.test.TestHelper.testprofile(code:Int)
 GET		/test/prepareSetting    			controllers.service.test.TestHelper.prepareSettingEnv
-GET		/test/prepareBooking/:conf			controllers.service.test.TestHelper.prepareBookingEnv(conf:Boolean)
+GET		/test/prepareBooking/:conf		controllers.service.test.TestHelper.prepareBookingEnv(conf:Boolean)
 
 # Mail chimp trigger
 GET		/mail/ping							controllers.service.mailchimp.MailChimpController.ping

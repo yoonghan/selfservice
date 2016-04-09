@@ -465,4 +465,3 @@ object SubscriptionController extends BaseApiController {
   }
 
 }
-

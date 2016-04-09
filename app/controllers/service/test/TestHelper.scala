@@ -47,7 +47,7 @@ object TestHelper extends BaseApiController{
     val _name = "Test Data"
     val _type = "G"
     val _accessLvl = AUTH_CAL_CREATE_LVL + AUTH_DEFAULT_LVL
-    val _cpId = "550374462c4125ab0049afc6"
+    val _cpId = "5702efad36864f8100e16f64"
     val _newUser = false
 
     code match {
@@ -113,7 +113,7 @@ object TestHelper extends BaseApiController{
       }
     }
   }
-  
+
   private def createProfile(userId:String, oType:String){
     def profileCollection: JSONCollection = db.collection[JSONCollection](PROFILE.toString())
     val userProfile:UserProfileWithId = UserProfileWithId(
@@ -188,12 +188,12 @@ object TestHelper extends BaseApiController{
     Thread.sleep(1.seconds.toMillis)
     Ok("Done")
   }
-  
+
   def prepareBookingEnv(confirm:Boolean)= TestAction {
     bookingEnv(confirm)
     Ok("Done")
   }
-  
+
   private def bookingEnv(confirm:Boolean){
     def subscriptionCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
 
@@ -224,9 +224,9 @@ object TestHelper extends BaseApiController{
           System.err.println("Failed")
         }
       }
-      
+
       Thread.sleep(2.seconds.toMillis)
-      
+
       def calendarCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
       def userCollection: JSONCollection = db.collection[JSONCollection](USER.toString())
       val futureCalRemoval = calendarCollection.remove(Json.obj("userId" -> (oType+userId)));
@@ -245,7 +245,7 @@ object TestHelper extends BaseApiController{
           System.err.println("Failed")
         }
       }
-      
+
       Thread.sleep(1.seconds.toMillis)
   }
 }

@@ -9,7 +9,7 @@
 
 @echo off
 
-set OPENSHIFT_MONGODB_DB_URL=mongodb://jomjaring:j0mSave1t@localhost:27017/
+set OPENSHIFT_MONGODB_DB_URL=mongodb://walcron:walcr0nSave1t@localhost:27017/
 set OPENSHIFT_APP_NAME=persons
 set OPENSHIFT_DIY_IP=localhost
 set OPENSHIFT_DIY_PORT=9000
