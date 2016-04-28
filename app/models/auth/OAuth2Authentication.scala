@@ -1,7 +1,7 @@
 package models.auth
 
-import com.jaring.jom.util.authentication._
-import com.jaring.jom.util.impl._
+import com.walcron.util.authentication._
+import com.walcron.util.impl._
 import utils.CommonKeys._
 
 object OAuth2Authentication{

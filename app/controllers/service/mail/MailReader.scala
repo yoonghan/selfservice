@@ -3,7 +3,7 @@ package controllers.service.mail
 import play.api.cache.Cache
 import play.api.Play.current
 import utils.ConfigurationSetup
-import com.jaring.jom.util.common.PropertyLoaderUtil
+import com.walcron.util.common.PropertyLoaderUtil
 import controllers.jobs.LogActor
 
 

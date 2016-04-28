@@ -1,6 +1,6 @@
 package controllers.service.auth
 
-import com.jaring.jom.util.authentication._
+import com.walcron.util.authentication._
 import akka.actor._
 import play.api.libs.json._
 import models.auth.OAuth2Authentication

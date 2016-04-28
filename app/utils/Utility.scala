@@ -3,7 +3,7 @@ package utils
 import java.net.URL
 
 import play.api.Logger
-import com.jaring.jom.util.email.EmailUtility
+import com.walcron.util.email.EmailUtility
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption

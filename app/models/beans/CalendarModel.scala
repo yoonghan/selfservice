@@ -175,7 +175,7 @@ object CalendarModel {
   }
   
     def validateSetupInput(reservationReq: CalReservation):List[String] = {
-      import com.jaring.jom.util.converter.NumberConverter._
+      import com.walcron.util.converter.NumberConverter._
       import models.beans.UserModel._
       
       val ternary:String = reservationReq.userInfo.toTernaryString

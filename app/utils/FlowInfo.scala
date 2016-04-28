@@ -2,7 +2,7 @@ package utils
 
 import java.io.File
 import java.nio.file.{Files,StandardCopyOption}
-import com.jaring.jom.util.img.ThumbnailCreator
+import com.walcron.util.img.ThumbnailCreator
 
 /**
  * Copied from User: Kayrnt

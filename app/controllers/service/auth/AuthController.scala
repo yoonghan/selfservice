@@ -3,7 +3,7 @@ package controllers.service.auth
 import play.api._
 import play.api.mvc._
 import util.{Failure, Success}
-import com.jaring.jom.util.authentication._
+import com.walcron.util.authentication._
 import reactivemongo.api._
 import play.modules.reactivemongo.MongoController
 import play.modules.reactivemongo.json.collection.JSONCollection

@@ -6,7 +6,7 @@ import utils.ConfigurationSetup
 import play.api.mvc.Controller
 import play.api.libs.json._
 import play.api.Play.current
-import com.jaring.jom.util.common.PropertyLoaderUtil
+import com.walcron.util.common.PropertyLoaderUtil
 import java.util.Properties
 
 object WSTrigger{
