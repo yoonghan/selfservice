@@ -4,17 +4,17 @@ CORS implementation for modern browsers to support REST
 angular (binding) - variable, (model) - ng-model, (css) - css, (id) - id
 mongodb problem in returning list of futures. Unsolved in this case.
 Reports, email are runned using actors. To test performance next time.
-Used protractor for AngularJS test, Rest Assured for REST application, 
+Used protractor for AngularJS test, Rest Assured for REST application,
 All HTML5 should contain meta data of (view port, title, robots).
-Asserted .jomjaring.com domain in cookie to support cross subdomain support. scala.jomjaring.com and www.jomjaring.com integrates but different url.
+Asserted .walcron.com domain in cookie to support cross subdomain support. scala.walcron.com and www.walcron.com integrates but different url.
 Google Analytics only implemented in first Page. To implement more in future.
 Cookie used as session in play.
 Swagger is for documentation for using REST. However due to cross domain this is not supported as of now for UI.
 Caching under NodeJS is important to maintain fast page load.
 AngularJS route is easy to use, to implement more in future. However, all JS global variable is shared, becareful. For $scope to be shared create a service [look into reservation list page].
 
-Careful of condition, as allowed to have no return values, conditions like A&&B&&C can be missed out when multiple line like 
-A && B 
+Careful of condition, as allowed to have no return values, conditions like A&&B&&C can be missed out when multiple line like
+A && B
 C
 Forgetting C as a logical case to include.
 

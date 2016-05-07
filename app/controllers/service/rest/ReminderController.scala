@@ -35,26 +35,26 @@ object ReminderController extends BaseApiController {
 	def reminderCollection: JSONCollection = db.collection[JSONCollection](REMINDER.toString())
 	def emailValidCollection: JSONCollection = db.collection[JSONCollection](EMAIL_VALID_LIST.toString())
 	def emailCollection: JSONCollection = db.collection[JSONCollection](EMAIL_NOTIFY_LIST.toString())
-	
+
 	val dateFormat = "dd/MM/yyyy";
-	
+
   /**
    * Insert or update reminder profile
    */
   @ApiOperation(
-    nickname = "insertReminderProfile", 
-    value = "Creates or updates a user reminder", 
-    notes = "Creates or update a user reminder", 
+    nickname = "insertReminderProfile",
+    value = "Creates or updates a user reminder",
+    notes = "Creates or update a user reminder",
     response = classOf[String],
     httpMethod = "POST"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   def profileIns = AuthorizeUser(BodyParsers.parse.json){request =>
     def insertToEmailValidCollection(userId:String, email:Option[String]){
       if(email.isDefined){
           val resetDateWithoutHours = getDate
           val insDate = resetDateWithoutHours.toString(dateFormat)
-        
+
     	  val userAuthId = Json.obj("_id" -> userId)
     	  val key = UUID.randomUUID().toString();
 		  val emailObj = EmailValidate(
@@ -72,11 +72,11 @@ object ReminderController extends BaseApiController {
 		  }
       }
     }
-    
+
     val _reminderProfile = request.body.validate[ReminderSetting_Edit];
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
-    
+
     _reminderProfile.fold(
         errors => {
           JsonResponse(BadRequest(Json.obj("error"->"Unexpected Request, what have you sent?")));
@@ -86,27 +86,27 @@ object ReminderController extends BaseApiController {
           if(errorList.isEmpty){
             val userCombination = userIDCombination(oType , userId)
             val userAuthId = Json.obj("_id" -> userCombination)
-            
+
             val query = if(reminderProfile.alertEmail.isDefined){
-              (userAuthId ++ Json.obj("alertEmail" -> reminderProfile.alertEmail.get)) 
+              (userAuthId ++ Json.obj("alertEmail" -> reminderProfile.alertEmail.get))
             }else{
               userAuthId
             }
-        
+
 
             val upd_jsonObj = Json.toJson(reminderProfile)
             val upd_query = upd_jsonObj.as[JsObject]
-            
+
             val updateFuture = reminderCollection.update(query, Json.obj("$set"->(upd_query)), GetLastError(), upsert = false, multi = false)
-            //If there is an email needed   
-            
+            //If there is an email needed
+
             val message = updateFuture.map{
 	          result => {
 	        	  if(result.updated == 0){
 	        	    insertToEmailValidCollection(userCombination, reminderProfile.alertEmail)
 	        	    val mod_UpdObj = upd_query ++ Json.obj("validEmail"->false) ++ userAuthId
 	        	    val collUpdate = reminderCollection.update(userAuthId, mod_UpdObj, GetLastError(), upsert = true, multi = false)
-	        	    
+
 	        	    collUpdate.onComplete{
 		              case Failure(f)=> LogActor.logActor ! (userAuthId+">>"+Json.stringify(mod_UpdObj)+">>"+f.getMessage())
 		              case Success(s)=>;
@@ -121,28 +121,28 @@ object ReminderController extends BaseApiController {
         }
      )
   }
-	
+
   /**
-   * Resend email reminder. 
+   * Resend email reminder.
    */
   @ApiOperation(
-    nickname = "resendemail", 
-    value = "Resent email reminder", 
-    notes = "If user have an email alert, resent the email reminder again.", 
+    nickname = "resendemail",
+    value = "Resent email reminder",
+    notes = "If user have an email alert, resent the email reminder again.",
     response = classOf[ReminderSetting],
     httpMethod = "GET"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   def resendEmailReminder = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>
     val userId = request.session(USER_ID)
     val oType = request.session(OTYPE)
     val userCombination = userIDCombination(oType , userId)
     val query = Json.obj("_id" -> userCombination)
-    
-    
+
+
 	val cursor:Cursor[EmailValidate] = emailValidCollection.find(query).cursor[EmailValidate]
 	val futureEmailValidate: Future[List[EmailValidate]] = cursor.collect[List]()
-	
+
     futureEmailValidate.map { reminderList =>
       reminderList.size match {
         case 1 => {
@@ -156,21 +156,21 @@ object ReminderController extends BaseApiController {
       }
     }
   }
-  
+
   /**
    * Validate email reminder
    */
   @ApiOperation(
-    nickname = "validateemail", 
-    value = "Validate Email Sent", 
-    notes = "validate the user's email that have been sent.", 
+    nickname = "validateemail",
+    value = "Validate Email Sent",
+    notes = "validate the user's email that have been sent.",
     response = classOf[ReminderSetting],
     httpMethod = "GET"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
   def validateEmailReminder(userId:String, key:String) = Action.async{request =>
     val query = Json.obj("_id" -> userId, "key" -> key)
-    
+
     val futureRemove = emailValidCollection.remove(query)
     futureRemove.map{
       result => {
@@ -190,28 +190,28 @@ object ReminderController extends BaseApiController {
       }
     }
   }
-	
-	
+
+
   /**
    * Retrieve reminder profile by user
    */
   @ApiOperation(
-    nickname = "getReminderProfile", 
-    value = "Reminder Profile", 
-    notes = "Returns user's reminder profile", 
+    nickname = "getReminderProfile",
+    value = "Reminder Profile",
+    notes = "Returns user's reminder profile",
     response = classOf[ReminderSetting],
     httpMethod = "GET"
     )
-  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access"))) 
-  def profile = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>    
-    
+  @ApiResponses(Array(new ApiResponse(code = 401, message = "User had no authorities to access")))
+  def profile = AuthorizeAsyncUser(BodyParsers.parse.anyContent){request =>
+
 	val userId = request.session(USER_ID)
 	val oType = request.session(OTYPE)
 	val query = Json.obj("_id" -> userIDCombination(oType,userId));
 
 	val cursor:Cursor[ReminderSetting] = reminderCollection.find(query).cursor[ReminderSetting]
 	val futureReminderList: Future[List[ReminderSetting]] = cursor.collect[List]()
-	
+
     futureReminderList.map { reminderList =>
       reminderList.size match {
         case 0 => JsonResponse(NoContent)
@@ -221,37 +221,37 @@ object ReminderController extends BaseApiController {
       }
     }
   }
-  
+
   private def getDate():DateTime={
     val currDate = (new DateTime(DateTimeZone.UTC))
     new DateTime(currDate.getYear(), currDate.getMonthOfYear(), currDate.getDayOfMonth(), 0, 0, 0)
   }
-  
+
   /**
-   * If there are duplicates, any changes will get overridden until email gets sent. 
+   * If there are duplicates, any changes will get overridden until email gets sent.
    */
   private def createEmail(userId:String, userEmail:String, key:String, date:String){
     //no decoder needed until in future.
     val link = s"u=$userId&k=$key"
     val id = "EMAIL"+userId
     val query = Json.obj("_id"-> id)
-    
+
     val emailMessage = "Hello there,\n\n" +
-    		"You are receiving this email as your email in JOM Jaring has not been verified\n"+
+    		"You are receiving this email as your email in Walcron has not been verified\n"+
     		"\n\n"+
     		"Please verify your account by click on this link below:"+
-    		s"http://scala.jomjaring.com/reminder/verify?$link\n\n"+
-    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
+    		s"http://scala.walcron.com/reminder/verify?$link\n\n"+
+    		"Reminder: Beware of fraudelant emails. We from Walcron do not imply any charges from you for this service is provided free.\n\n"+
     		"Sincerity from,\n"+
-    		"JOM Jaring";
-    
+    		"Walcron Coorperation";
+
     val notifyObj = EmailNotify(
         id,
-        userId, 
-        date, 
+        userId,
+        date,
         EMAIL_VALIDATOR_TYPE ,
-        userEmail, 
-        emailMessage, 
+        userEmail,
+        emailMessage,
         false
         )
     val updRec = emailCollection.update(query,notifyObj, GetLastError(), upsert=true, multi=false)

@@ -6,34 +6,34 @@ import play.Logger
 object ConfigurationSetup {
 
 	private val bookinghr = current.configuration.getString("min-server-booking-hr").get
-	
+
 	val DATE_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy")
 	val DATETIME_FORMAT = new java.text.SimpleDateFormat("dd-MM-yyyy hh:mm:ss")
-	
+
 	val FOLDER_TEMP = current.configuration.getString("tempfile_folder.uri").get
 	val FOLDER_STORE = current.configuration.getString("storefile_folder.uri").get
 	val FOLDER_PICTURE = "picture/"
     val IMAGE_GENERATOR = current.configuration.getString("image_generator.uri").get
-	
+
 	val MIN_BOOKING_HR = try{Integer.parseInt(bookinghr,10)} catch {case e:Exception => 0}
-	
+
 	//Header controls
 	val ALLOWED_ORIGINS = current.configuration.getString("header-origin").get
 	val ALLOWED_METHODS = "GET, POST, DELETE, PUT, OPTIONS"
 	val ALLOWED_HEADERS = "Origin, Content-Type, Accept, X-Requested-With, api_key, Authorization"
-	  
+
 	//Excel type
 	val EXCEL_TYPE = ".xlsx"
-	  
+
 	//Image Size
 	val IMG_SIZE = 150
-    
+
 	val LOGOUT_LOCATION = current.configuration.getString("logout").get
-	
+
 	//Email Controls
 	val EMAIL_VALID_PATH = current.configuration.getString("email.validated").get
 	val EMAIL_INVALID_PATH = current.configuration.getString("email.invalidated").get
-	
+
 	//Control Upload Size
 	val MAX_UPLOAD_SIZE:Int = {
 	  val uploadSize = current.configuration.getString("uploadSize").get
@@ -48,12 +48,12 @@ object ConfigurationSetup {
 		  size * 1024
 	  }
 	}
-	
+
 	//Default Values
-	val COMPANY_NAME="JOM Jaring"
-	val LOGIN_PAGE="http://login.jomjaring.com"
+	val COMPANY_NAME="Walcron Coorperation"
+	val LOGIN_PAGE="http://login.walcron.com"
 	val SUBJECT="Reminder"
 	val MAILTEMPLATE="mailtemplate.html"
 	val CURR_YEAR="2015"
-	
+
 }

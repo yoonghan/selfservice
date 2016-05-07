@@ -32,35 +32,35 @@ import reactivemongo.core.commands.GetLastError
 
 object ReportCreator {
 	private val reportSingleCall: ActorRef = Akka.system().actorOf(Props[BGReportCreator], name="BGReportCreator")
-	
+
 	DateTimeZone.setDefault(DateTimeZone.UTC);
-	
+
 	implicit val timeout = Timeout(60.seconds)	// allows a minute to create
-	
+
 	def createCalendar(corporateId:String) = {
 	  val retVal = reportSingleCall ? (new ReportCreation(corporateId))
 	}
 }
 
 class BGReportCreator extends Actor with MongoJob{
-  
+
   val eventHeader = Array("Status", "First Name", "Last Name", "Email", "Contact No", "Address", "PostCode", "State")
   val corporateHeader = Array("Name", "Description", "Website", "Contact No", "Email")
   val eventListHeader = Array("Title", "Description", "Start Date Time", "End Date Time", "Availability Left", "Reserve Count")
   val eventGap = 6 //This is for the event to ensure that a gap is left
-  
+
   def reportCollection: JSONCollection = db.collection[JSONCollection](REPORT_NOTIFY_LIST.toString())
   def calCollection: JSONCollection = db.collection[JSONCollection](CALENDAR.toString())
   def profileCollection: JSONCollection = db.collection[JSONCollection](PROFILE.toString())
   def subscriptionCollection: JSONCollection = db.collection[JSONCollection](SUBSCRIPTION.toString())
-  
+
   /**
    * Print all system data, for future troubleshooting.
    */
 	def printSysData(id:Long){
 		Logger.info("Report Log ID:[" + id + "], Memory Avail >>> " +Runtime.getRuntime().freeMemory() + ", Time >>> " + System.currentTimeMillis())
 	}
-	
+
 	/**
 	 * Generate the excel.
 	 */
@@ -74,85 +74,87 @@ class BGReportCreator extends Actor with MongoJob{
 	        )
 	    val sort = Json.obj("start" -> -1)
 	    val cursor:Cursor[CalendarRegisteredUser] = calCollection.find(query).sort(sort).cursor[CalendarRegisteredUser]
-	    
+
 	    val futureCalList: Future[List[CalendarRegisteredUser]] = cursor.collect[List]()
 	    futureCalList
 	  }
-	  
+
 	  /**
 	   * Process User details per Event.
 	   */
 	  def processUserPerEvent(regModel:List[UserStorageModel], pendModel:List[UserStorageModel],
 	    calRegUser:CalendarRegisteredUser, startGap:Int, eventSheet:XSSFSheet, workbook:XSSFWorkbook):Future[List[UserProfileWithId]] = {
-	    
+
 	    val regMap = regModel.map(t => t.id -> t).toMap
 	    val pendMap = pendModel.map(t => t.id -> t).toMap
-	    
+
 	    val query = Json.obj(
 	        "_id" -> Json.obj("$in" -> (regModel.map(_.id) ++ pendModel.map(_.id)))
 	        )
 	    val cursor:Cursor[UserProfileWithId] = profileCollection.find(query).cursor[UserProfileWithId]
 	    val futureUserList: Future[List[UserProfileWithId]] = cursor.collect[List]()
-	    
+
 	    val rowCreator = createRow(eventSheet) _
-	    
+
 	    futureUserList.map { userList =>
 	      for(userCnt <- 0 until userList.size){
 	        val row = rowCreator((startGap) + (userCnt))
-	        val id = userList(userCnt)._id 
+	        val id = userList(userCnt)._id
 	        val userModel = regMap.get(id).getOrElse(pendMap.get(id).get)
-	        
+
 	        writeUser(regMap.contains(id), userList(userCnt).firstName , userList(userCnt).lastName ,userModel, row)
 	      }
 	    }
-	    
+
 	    futureUserList
 	  }
-	  
+
 	  /**
 	   * Create a temporary workbook
 	   */
 	  def prepareExcel() = {
       new XSSFWorkbook
 	  }
-	  
+
 	  /**
 	   * Email attachment
 	   */
-	  def emailFile(fileName:String){
+	  def emailFile(sourceFile:String, fileName:String){
 	    val message = "Hello there,\n\n" +
 	    		"Attached is the report of the event calendar that you have had with us.\n\n" +
-	    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
+	    		"Reminder: Beware of fraudelant emails. We from Walcron do not imply any charges from you for this service is provided free.\n\n"+
 	    		"Sincerity from,\n"+
-	    		"JOM Jaring";
-	    utils.Utility.sendEmail(Option.empty, 
+	    		"Walcron Coorperation";
+	    utils.Utility.sendEmail(Option.empty,
 	        "Event Report",
 	        message,
-	        fileName)
+	        sourceFile,
+					fileName)
 	  }
-	  
+
 	  /**
 	   * Close excel
 	   */
 	  def closeExcel(wb:XSSFWorkbook) = {
-	    val fileName = ConfigurationSetup.FOLDER_TEMP + "excel_" + corporateId + EXCEL_TYPE;
-	    val tempFile = new TemporaryFile(new File(fileName))
-	    val file = new FileOutputStream(tempFile.file)
+	    val sourceFile = ConfigurationSetup.FOLDER_TEMP + "excel_" + corporateId + EXCEL_TYPE
+			var file = new File(sourceFile)
+	    val tempFile = new TemporaryFile(file)
+	    val fileOutput = new FileOutputStream(tempFile.file)
 	    try{
-		    wb.write(file)		    
+		    wb.write(fileOutput)
 		    wb.close()
-		    
-		    emailFile(fileName)
-		    
-		    file.close()
+
+		    emailFile(sourceFile, file.getName())
+
+		    fileOutput.close()
 		    tempFile.clean
 	    }catch{
 	      case e:Exception =>{
 	        e.printStackTrace()
-	        logActor ! "File not able to close: "+fileName
+	        logActor ! "File not able to close: "+sourceFile
 	      }
 	    }
-	    
+
 	    removeFromDB();
     }
 
@@ -174,7 +176,7 @@ class BGReportCreator extends Actor with MongoJob{
 	    val renameSheetName = WorkbookUtil.createSafeSheetName(sheetName)
 	    workbook.createSheet(renameSheetName)
 	  }
-	  
+
 	  /**
 	   * Write a cell with given value. Columns must not clash.
 	   */
@@ -186,16 +188,16 @@ class BGReportCreator extends Actor with MongoJob{
 	      case opt:Option[_] => cell.setCellValue(if(opt.isEmpty)"" else opt.get.toString)
 	      case any => cell.setCellValue(any.toString)
 	    }
-    	
+
 	  }
-	  
+
 	  /**
 	   * Create a row
 	   */
 	  def createRow(sheet:XSSFSheet)(row:Int)={
 	      sheet.createRow(row.toShort)
 	  }
-	  
+
 	  /**
 	   * Write user detail
 	   */
@@ -203,33 +205,33 @@ class BGReportCreator extends Actor with MongoJob{
 	    writeCell({if(confirmed) "Confirmed" else "Pending"} , 0, row)
 	    writeCell(firstName , 1, row)
 	    writeCell(lastName  , 2, row)
-	    
+
 	    writeCell(userModel.email   , 3, row)
 	    writeCell(userModel.ctcNo   , 4, row)
-	    
+
 	    writeCell(userModel.addr  , 5, row)
 	    writeCell(userModel.pstCd  , 6, row)
 	    writeCell(userModel.state   , 7, row)
-	    	 
+
 	  }
-	  
+
 	  /**
 	   * Create Header for each event
 	   */
 	  def createEventHeader(currRow:Int, sheet:XSSFSheet){
 	    val row = createRow(sheet)(currRow)
-	    
+
 	    for(cnt <- 0 until eventHeader.length){
 		    writeCell(eventHeader(cnt), cnt.toShort, row)
-	    } 
+	    }
 	  }
-	  
+
 	  /**
 	   * Create Header for list of event
 	   */
 	  def createEventListHeader(currRow:Int, sheet:XSSFSheet){
 	    val row = createRow(sheet)(currRow)
-	    
+
 	    for(cnt <- 0 until eventListHeader.length){
 		    writeCell(eventListHeader(cnt), cnt.toShort, row)
 	    }
@@ -245,28 +247,28 @@ class BGReportCreator extends Actor with MongoJob{
         writeCell(corporateHeader(cnt), cnt.toShort, row)
       }
     }
-	  
+
 	  /**
 	   * Write event
 	   */
 	  def writeEvent(currRow:Int, row:Int, event:CalendarRegisteredUser, sheet:XSSFSheet){
 	    val rowCreator = createRow(sheet) _
-	    
+
 	    //firstCol
-	    val row1 = rowCreator(currRow) 
+	    val row1 = rowCreator(currRow)
 	    writeCell("Title:", 0, row1)
 	    writeCell(event.title,  1, row1)
-	    
+
 	    //secondCol
 	    val row2 = rowCreator(currRow+1)
 	    writeCell("Description:", 0, row2)
 	    writeCell(event.desc, 1, row2)
-	    
+
 		//thirdCol
 	    val row3 = rowCreator(currRow+2)
 	      writeCell("Remaining Seats:", 0, row3)
 		  writeCell(event.avail , 1, row3)
-	    
+
 	    val row4 = rowCreator(currRow+3)
 	    val row5 = rowCreator(currRow+4)
 	    if(event.allDay){
@@ -275,7 +277,7 @@ class BGReportCreator extends Actor with MongoJob{
 	    }else{
 	      writeCell("Start Date Time:", 0, row4)
 		  writeCell(DATETIME_FORMAT.format(event.start), 1, row4)
-		  
+
 		  writeCell("End Date Time:", 0, row5)
 		  writeCell(DATETIME_FORMAT.format(event.end), 1, row5)
 	    }
@@ -297,7 +299,7 @@ class BGReportCreator extends Actor with MongoJob{
 
 
     }
-	  
+
 	  /**
 	   * Write event
 	   */
@@ -317,7 +319,7 @@ class BGReportCreator extends Actor with MongoJob{
 		  else
 		    writeCell(0, 5, rowCreator)
 	  }
-	  
+
 	  /**
 	   * Process all the events and every user.
 	   */
@@ -338,7 +340,7 @@ class BGReportCreator extends Actor with MongoJob{
 		      }
 	      listRegUserId
       }
-	    
+
 	    if(eventList.length > 0){
 		    val toWait = Future.sequence(concurrList.toList)
 		    Await.ready(toWait, 3.minutes)
@@ -346,10 +348,10 @@ class BGReportCreator extends Actor with MongoJob{
 	    }else{
 	    	val message = "Hello there,\n\n" +
 	    		"There are no reservation created by you. So sorry.\n\n" +
-	    		"Reminder: Beware of fraudelant emails. We from JOM Jaring do not imply any charges from you for this service is provided free.\n\n"+
+	    		"Reminder: Beware of fraudelant emails. We from Walcron do not imply any charges from you for this service is provided free.\n\n"+
 	    		"Sincerity from,\n"+
-	    		"JOM Jaring";
-	    	utils.Utility.sendEmail(Option.empty, 
+	    		"Walcron Coorperation";
+	    	utils.Utility.sendEmail(Option.empty,
 	        "Event Report",
 	        message)
 	    }
@@ -398,7 +400,7 @@ class BGReportCreator extends Actor with MongoJob{
       }
     }
 	}
-  
+
 	/**
 	 * Actor Begins here.
 	 **/
@@ -412,21 +414,21 @@ class BGReportCreator extends Actor with MongoJob{
 		    printSysData(id) // End log
 	    }
 	  }
-	  
+
 	  case _ => {
 	    logActor ! "Invalid report call"
 	  }
 	}
-	
+
 	def checkSync(corporateId:String):Boolean = {
 	  import scala.concurrent.ExecutionContext.Implicits.global
-	  
+
 	  val MAX_WAIT_DIFF = 5.minutes.toMillis
-	  
+
 	  val query = Json.obj("_id"->corporateId)
 	  val searchQuery:Cursor[ReportNotifyWithoutId] = reportCollection.find(query).cursor[ReportNotifyWithoutId]
 	  val curFutureSubList: Future[List[ReportNotifyWithoutId]] = searchQuery.collect[List]()
-		
+
 	  val future = curFutureSubList.map(notify =>
 		  notify.size match{
 		    case 0 => {
@@ -444,7 +446,7 @@ class BGReportCreator extends Actor with MongoJob{
 		    }
 		  }
 		)
-		
+
 		val result = Await.result(future, 5.seconds)
 		result
 	}
